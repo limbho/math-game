@@ -6,41 +6,112 @@
   <title>Math Challenge</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#667eea">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MathGame">
-<link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#667eea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MathGame">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
 </head>
 <body>
-  <div class="game">
-    <div class="stats">
-      <span>Счёт: <b id="score">0</b></span>
-      <span>Время: <b id="timer">60</b>с</span>
+
+  <!-- ===================== ГЛАВНОЕ МЕНЮ ===================== -->
+  <div class="screen menu-screen" id="menuScreen">
+    <div class="menu-card">
+      <h1 class="logo">🧮 Math Challenge</h1>
+      <p class="subtitle">Решай примеры и физические формулы на скорость</p>
+
+      <!-- Режим игры -->
+      <div class="menu-section">
+        <label class="menu-label">Режим</label>
+        <div class="option-group" data-group="mode">
+          <button class="option active" data-value="arithmetic">Арифметика</button>
+          <button class="option" data-value="physics">Формулы</button>
+          <button class="option" data-value="mixed">Микс</button>
+        </div>
+      </div>
+
+      <!-- Сложность -->
+      <div class="menu-section">
+        <label class="menu-label">Сложность</label>
+        <div class="option-group" data-group="difficulty">
+          <button class="option" data-value="easy">
+            <span class="opt-title">Легко</span>
+            <span class="opt-sub">90 сек · простые числа</span>
+          </button>
+          <button class="option active" data-value="normal">
+            <span class="opt-title">Норма</span>
+            <span class="opt-sub">60 сек · обычные</span>
+          </button>
+          <button class="option" data-value="hard">
+            <span class="opt-title">Сложно</span>
+            <span class="opt-sub">45 сек · большие числа</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Тема -->
+      <div class="menu-section">
+        <label class="menu-label">Тема</label>
+        <div class="option-group" data-group="theme">
+          <button class="option" data-value="system">🌗 Система</button>
+          <button class="option active" data-value="light">☀️ Светлая</button>
+          <button class="option" data-value="dark">🌙 Тёмная</button>
+        </div>
+      </div>
+
+      <!-- Рекорд -->
+      <div class="best-score" id="menuBest">Рекорд: 0</div>
+
+      <button class="play-btn" id="playBtn">Играть</button>
     </div>
-
-    <div class="mode-switch">
-      <button data-mode="arithmetic" class="active">Арифметика</button>
-      <button data-mode="physics">Формулы</button>
-    </div>
-
-    <div id="question" class="question">7 × 8 = ?</div>
-    <div id="points-badge" class="points-badge"></div>
-
-    <div id="answers" class="answers"></div>
-
-    <div id="feedback" class="feedback"></div>
   </div>
 
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('SW зарегистрирован', reg))
-        .catch(err => console.error('SW ошибка', err));
-    });
-  }
-</script>
+  <!-- ===================== ИГРА ===================== -->
+  <div class="screen game-screen hidden" id="gameScreen">
+    <div class="game">
+      <div class="stats">
+        <span>Счёт: <b id="score">0</b></span>
+        <span class="combo hidden" id="comboBadge">🔥 ×1</span>
+        <span>Время: <b id="timer">60</b>с</span>
+      </div>
+
+      <div id="question" class="question">7 × 8 = ?</div>
+      <div id="pointsBadge" class="points-badge"></div>
+
+      <div id="answers" class="answers"></div>
+
+      <div id="feedback" class="feedback"></div>
+
+      <button class="quit-btn" id="quitBtn">← В меню</button>
+    </div>
+  </div>
+
+  <!-- ===================== ФИНАЛ ===================== -->
+  <div class="screen end-screen hidden" id="endScreen">
+    <div class="game-over">
+      <h1>Игра окончена!</h1>
+      <div class="final-score" id="finalScore">0</div>
+      <div id="endBest"></div>
+      <div class="end-actions">
+        <button class="play-btn" id="againBtn">Играть снова</button>
+        <button class="quit-btn" id="menuBtn">В меню</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Конфетти -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW зарегистрирован', reg))
+          .catch(err => console.error('SW ошибка', err));
+      });
+    }
+  </script>
 </body>
 </html>
