@@ -1,20 +1,29 @@
 // ==============================
-// СОСТОЯНИЕ ИГРЫ
+// КОНФИГУРАЦИЯ СЛОЖНОСТИ
 // ==============================
-const state = {
-  mode: 'arithmetic',
-  score: 0,
-  time: 60,
-  current: null,
-  timerId: null,
-  finished: false,
+const DIFFICULTIES = {
+  easy: {
+    time: 90,
+    addRange: [1, 20],
+    mulRange: [2, 9],
+  },
+  normal: {
+    time: 60,
+    addRange: [1, 50],
+    mulRange: [2, 12],
+  },
+  hard: {
+    time: 45,
+    addRange: [10, 99],
+    mulRange: [3, 19],
+  },
 };
 
 // ==============================
 // БАЗА ФОРМУЛ
 // ==============================
 const formulas = [
-  // === МЕХАНИКА ===
+  // МЕХАНИКА
   { text: 'E = ?·c²',           answer: 'm', options: ['m', 'v', 'a', 'F'] },
   { text: 'F = m·?',             answer: 'a', options: ['a', 'v', 't', 's'] },
   { text: 'v = s / ?',           answer: 't', options: ['t', 'm', 'F', 'g'] },
@@ -29,28 +38,63 @@ const formulas = [
   { text: 'a = (v − v₀) / ?',    answer: 't', options: ['t', 's', 'a', 'm'] },
   { text: 'F = G·m₁·m₂ / ?',     answer: 'r²', options: ['r²', 'r', 'm', 't'] },
 
-  // === ЭЛЕКТРИЧЕСТВО ===
+  // ЭЛЕКТРИЧЕСТВО
   { text: 'I = ? / R',           answer: 'U', options: ['U', 'P', 'Q', 't'] },
   { text: 'U = I·?',             answer: 'R', options: ['R', 'Q', 't', 'P'] },
   { text: 'P = U·?',             answer: 'I', options: ['I', 'R', 't', 'Q'] },
   { text: 'Q = I²·R·?',          answer: 't', options: ['t', 'U', 'P', 'S'] },
   { text: 'R = ρ·L / ?',         answer: 'S', options: ['S', 'V', 't', 'm'] },
 
-  // === ДАВЛЕНИЕ И ЖИДКОСТИ ===
+  // ДАВЛЕНИЕ И ЖИДКОСТИ
   { text: 'p = ? / S',           answer: 'F', options: ['F', 'm', 'v', 'a'] },
   { text: 'p = ?·g·h',           answer: 'ρ', options: ['ρ', 'm', 'V', 'S'] },
   { text: 'Fа = ?·g·V',          answer: 'ρ', options: ['ρ', 'm', 'p', 'S'] },
   { text: 'ρ = ? / V',           answer: 'm', options: ['m', 'F', 'S', 'p'] },
 
-  // === ТЕПЛОТА ===
+  // ТЕПЛОТА
   { text: 'Q = c·m·?',           answer: 'Δt', options: ['Δt', 'v', 'S', 'F'] },
-  { text: 'Q = ?·m (плавление)', answer: 'λ', options: ['λ', 'c', 'ρ', 'g'] },
-  { text: 'Q = ?·m (парообраз.)',answer: 'L', options: ['L', 'c', 'g', 'ρ'] },
+  { text: 'Q = ?·m (плавл.)',    answer: 'λ', options: ['λ', 'c', 'ρ', 'g'] },
+  { text: 'Q = ?·m (парообр.)',  answer: 'L', options: ['L', 'c', 'g', 'ρ'] },
 
-  // === ВОЛНЫ ===
+  // ВОЛНЫ
   { text: 'v = λ·?',             answer: 'ν', options: ['ν', 'T', 'm', 't'] },
   { text: 'T = 1 / ?',           answer: 'ν', options: ['ν', 'λ', 'v', 't'] },
 ];
+
+// ==============================
+// НАСТРОЙКИ (сохраняются)
+// ==============================
+const settings = {
+  mode: 'arithmetic',
+  difficulty: 'normal',
+  theme: 'light',
+};
+
+function loadSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('settings') || '{}');
+    Object.assign(settings, saved);
+  } catch (e) {}
+}
+
+function saveSettings() {
+  localStorage.setItem('settings', JSON.stringify(settings));
+}
+
+// ==============================
+// СОСТОЯНИЕ ИГРЫ
+// ==============================
+const state = {
+  score: 0,
+  time: 60,
+  current: null,
+  timerId: null,
+  combo: 0,
+  maxCombo: 0,
+  correct: 0,
+  wrong: 0,
+  finished: false,
+};
 
 // ==============================
 // УТИЛИТЫ
@@ -59,28 +103,62 @@ function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function $(id) {
+  return document.getElementById(id);
+}
+
+// ==============================
+// ТЕМА
+// ==============================
+function applyTheme() {
+  const dark = settings.theme === 'dark' ||
+    (settings.theme === 'system' &&
+     window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('theme-dark', dark);
+  document.querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', dark ? '#1a1d2e' : '#667eea');
+}
+
+window.matchMedia('(prefers-color-scheme: dark)')
+  .addEventListener('change', () => {
+    if (settings.theme === 'system') applyTheme();
+  });
+
 // ==============================
 // ГЕНЕРАТОРЫ ВОПРОСОВ
 // ==============================
 function genArithmetic() {
+  const cfg = DIFFICULTIES[settings.difficulty];
   const ops = ['+', '-', '×', '÷'];
   const op = ops[Math.floor(Math.random() * ops.length)];
   let a, b, answer;
 
   switch (op) {
     case '+':
-      a = rand(1, 50); b = rand(1, 50); answer = a + b; break;
+      a = rand(...cfg.addRange);
+      b = rand(...cfg.addRange);
+      answer = a + b;
+      break;
     case '-':
-      a = rand(10, 50); b = rand(1, a); answer = a - b; break;
+      a = rand(...cfg.addRange);
+      b = rand(1, a);
+      answer = a - b;
+      break;
     case '×':
-      a = rand(2, 12); b = rand(2, 12); answer = a * b; break;
+      a = rand(...cfg.mulRange);
+      b = rand(...cfg.mulRange);
+      answer = a * b;
+      break;
     case '÷':
-      b = rand(2, 12); answer = rand(2, 12); a = b * answer; break;
+      b = rand(...cfg.mulRange);
+      answer = rand(...cfg.mulRange);
+      a = b * answer;
+      break;
   }
 
   return {
     text: `${a} ${op} ${b} = ?`,
-    answer: answer,
+    answer,
     a, b, op,
     type: 'arithmetic',
   };
@@ -99,59 +177,171 @@ function genFormula() {
   };
 }
 
+function genQuestion() {
+  if (settings.mode === 'arithmetic') return genArithmetic();
+  if (settings.mode === 'physics') return genFormula();
+  // mixed
+  return Math.random() < 0.5 ? genArithmetic() : genFormula();
+}
+
 // ==============================
 // ПОДСЧЁТ ОЧКОВ
 // ==============================
 function calculatePoints(q) {
-  // Формулы — фиксированная награда
   if (q.type === 'formula') return 15;
 
   const { a, b, op } = q;
-
-  // Базовые очки за операцию
   const base = { '+': 3, '-': 3, '×': 6, '÷': 9 }[op] || 3;
-
-  // Бонус за размер чисел (логарифмический, чтобы не росло линейно)
   const sizeBonus = Math.floor(Math.log2(Math.max(a, b) + 1)) * 2;
-
   return base + sizeBonus;
 }
 
 // ==============================
-// ГЕНЕРАЦИЯ ВАРИАНТОВ ОТВЕТА (для арифметики)
+// КОМБО И «КРАСИВЫЕ ЧИСЛА»
+// ==============================
+function comboMultiplier() {
+  if (state.combo < 3) return 1;
+  if (state.combo < 6) return 1.5;
+  if (state.combo < 10) return 2;
+  if (state.combo < 15) return 3;
+  return 4;
+}
+
+// «Красивое» число: круглое, кратное 5/10/100 или с повторяющимися цифрами
+function isBeautifulNumber(n) {
+  if (typeof n !== 'number') return false;
+  if (n < 10) return false;
+
+  const s = String(n);
+
+  // повторяющиеся цифры: 11, 333, 5555
+  if (/^(\d)\1+$/.test(s)) return true;
+
+  // круглые: 100, 200, 1000
+  if (n % 100 === 0) return true;
+
+  // кратные 5 (но не 10): 25, 45, 75, 125
+  if (n % 5 === 0 && n % 10 !== 0) return true;
+
+  // «зеркальные»: 121, 1221, 484
+  if (s === [...s].reverse().join('')) return true;
+
+  // круглые десятки: 30, 70, 120
+  if (n % 10 === 0) return true;
+
+  return false;
+}
+
+function fireConfetti() {
+  if (typeof confetti !== 'function') return;
+
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { y: 0.6 },
+    colors: ['#667eea', '#764ba2', '#ff6b6b', '#ffa500', '#2ecc71'],
+  });
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 40,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+    });
+    confetti({
+      particleCount: 40,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+    });
+  }, 150);
+}
+
+// ==============================
+// ВАРИАНТЫ ОТВЕТА ДЛЯ АРИФМЕТИКИ
 // ==============================
 function generateNumberOptions(correct) {
   const set = new Set([correct]);
-  while (set.size < 4) {
-    const delta = rand(-10, 10);
+  let guard = 0;
+  while (set.size < 4 && guard < 100) {
+    guard++;
+    const delta = rand(-Math.max(5, Math.floor(correct * 0.3)),
+                        Math.max(5, Math.floor(correct * 0.3)));
     if (delta !== 0) set.add(correct + delta);
   }
   return [...set];
 }
 
 // ==============================
-// ОТОБРАЖЕНИЕ ВОПРОСА
+// ЭКРАНЫ
+// ==============================
+function showScreen(name) {
+  $('menuScreen').classList.toggle('hidden', name !== 'menu');
+  $('gameScreen').classList.toggle('hidden', name !== 'game');
+  $('endScreen').classList.toggle('hidden', name !== 'end');
+}
+
+// ==============================
+// СТАРТ ИГРЫ
+// ==============================
+function startGame() {
+  state.score = 0;
+  state.time = DIFFICULTIES[settings.difficulty].time;
+  state.combo = 0;
+  state.maxCombo = 0;
+  state.correct = 0;
+  state.wrong = 0;
+  state.finished = false;
+
+  $('score').textContent = 0;
+  $('timer').textContent = state.time;
+  updateComboBadge();
+
+  showScreen('game');
+  nextQuestion();
+  startTimer();
+}
+
+// ==============================
+// ТАЙМЕР
+// ==============================
+function startTimer() {
+  clearInterval(state.timerId);
+  state.timerId = setInterval(() => {
+    state.time--;
+    $('timer').textContent = state.time;
+
+    if (state.time <= 0) {
+      clearInterval(state.timerId);
+      endGame();
+    }
+  }, 1000);
+}
+
+// ==============================
+// ВОПРОС
 // ==============================
 function nextQuestion() {
   if (state.finished) return;
 
-  state.current = state.mode === 'arithmetic'
-    ? genArithmetic()
-    : genFormula();
+  state.current = genQuestion();
 
-  // Текст вопроса
-  document.getElementById('question').textContent = state.current.text;
+  $('question').textContent = state.current.text;
 
-  // Бейдж с очками
-  const pts = calculatePoints(state.current);
-  document.getElementById('points-badge').textContent = `+${pts} очков`;
+  const basePts = calculatePoints(state.current);
+  const mult = comboMultiplier();
+  const totalPts = Math.round(basePts * mult);
 
-  // Варианты ответа
-  const options = state.mode === 'arithmetic'
+  $('pointsBadge').textContent = mult > 1
+    ? `+${totalPts} очков (${basePts} × ${mult})`
+    : `+${totalPts} очков`;
+
+  const options = state.current.type === 'arithmetic'
     ? generateNumberOptions(state.current.answer)
     : state.current.options;
 
-  const container = document.getElementById('answers');
+  const container = $('answers');
   container.innerHTML = '';
 
   [...options]
@@ -171,21 +361,50 @@ function checkAnswer(value) {
   if (state.finished) return;
 
   const correct = String(state.current.answer);
-  const fb = document.getElementById('feedback');
-  const pts = calculatePoints(state.current);
+  const fb = $('feedback');
+  const basePts = calculatePoints(state.current);
 
   if (String(value) === correct) {
-    state.score += pts;
-    fb.textContent = `✅ Верно! +${pts}`;
-    fb.style.color = '#2ecc71';
+    // Комбо растёт ДО подсчёта очков
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    const mult = comboMultiplier();
+    const totalPts = Math.round(basePts * mult);
+    state.score += totalPts;
+    state.correct++;
+
+    fb.textContent = mult > 1
+      ? `✅ Верно! +${totalPts} (×${mult})`
+      : `✅ Верно! +${totalPts}`;
+    fb.style.color = 'var(--success)';
+
+    // Конфетти за красивое число
+    if (state.current.type === 'arithmetic' &&
+        isBeautifulNumber(state.current.answer)) {
+      fireConfetti();
+      fb.textContent += ' 🎉';
+    }
+
+    // Конфетти за каждые 5 подряд
+    if (state.combo > 0 && state.combo % 5 === 0) {
+      fireConfetti();
+    }
+
+    updateComboBadge();
   } else {
-    const penalty = Math.round(pts / 2);
+    state.combo = 0;
+    state.wrong++;
+    const penalty = Math.round(basePts / 2);
     state.score = Math.max(0, state.score - penalty);
+
     fb.textContent = `❌ Правильно: ${correct} (−${penalty})`;
-    fb.style.color = '#e74c3c';
+    fb.style.color = 'var(--error)';
+
+    updateComboBadge();
   }
 
-  document.getElementById('score').textContent = state.score;
+  $('score').textContent = state.score;
 
   setTimeout(() => {
     fb.textContent = '';
@@ -193,19 +412,15 @@ function checkAnswer(value) {
   }, 900);
 }
 
-// ==============================
-// ТАЙМЕР
-// ==============================
-function startTimer() {
-  state.timerId = setInterval(() => {
-    state.time--;
-    document.getElementById('timer').textContent = state.time;
-
-    if (state.time <= 0) {
-      clearInterval(state.timerId);
-      endGame();
-    }
-  }, 1000);
+function updateComboBadge() {
+  const badge = $('comboBadge');
+  const mult = comboMultiplier();
+  if (state.combo >= 2) {
+    badge.classList.remove('hidden');
+    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
+  } else {
+    badge.classList.add('hidden');
+  }
 }
 
 // ==============================
@@ -213,44 +428,73 @@ function startTimer() {
 // ==============================
 function endGame() {
   state.finished = true;
-  const best = Number(localStorage.getItem('bestScore') || 0);
+  clearInterval(state.timerId);
 
+  $('finalScore').textContent = state.score;
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
   let bestLine = '';
   if (state.score > best) {
     localStorage.setItem('bestScore', state.score);
-    bestLine = '<p style="color:#2ecc71">🎉 Новый рекорд!</p>';
+    bestLine = '<p style="color:var(--success)">🎉 Новый рекорд!</p>';
   } else {
-    bestLine = `<p style="color:#999">Рекорд: ${best}</p>`;
+    bestLine = `<p style="color:var(--text-faint)">Рекорд: ${best}</p>`;
   }
 
-  document.querySelector('.game').innerHTML = `
-    <div class="game-over">
-      <h1>Игра окончена!</h1>
-      <div class="final-score">${state.score}</div>
-      ${bestLine}
-      <button onclick="location.reload()">Играть снова</button>
-    </div>
+  const statsLine = `
+    <p style="color:var(--text-muted);font-size:14px;margin:8px 0">
+      Верно: ${state.correct} · Ошибок: ${state.wrong} · Макс. комбо: ${state.maxCombo}
+    </p>
   `;
+
+  $('endBest').innerHTML = bestLine + statsLine;
+  showScreen('end');
 }
 
 // ==============================
-// ПЕРЕКЛЮЧЕНИЕ РЕЖИМА
+// МЕНЮ: ВЫБОР ОПЦИЙ
 // ==============================
-document.querySelectorAll('.mode-switch button').forEach(btn => {
-  btn.onclick = () => {
-    if (state.finished) return;
+function initMenu() {
+  document.querySelectorAll('.option-group').forEach(group => {
+    const key = group.dataset.group;
+    group.querySelectorAll('.option').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === settings[key]);
+      btn.onclick = () => {
+        settings[key] = btn.dataset.value;
+        group.querySelectorAll('.option')
+          .forEach(b => b.classList.toggle('active', b === btn));
+        saveSettings();
 
-    document.querySelectorAll('.mode-switch button')
-      .forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+        if (key === 'theme') applyTheme();
+      };
+    });
+  });
 
-    state.mode = btn.dataset.mode;
-    nextQuestion();
-  };
-});
+  // Рекорд в меню
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  $('menuBest').textContent = `Рекорд: ${best}`;
+}
 
 // ==============================
-// ЗАПУСК
+// КНОПКИ
 // ==============================
-nextQuestion();
-startTimer();
+$('playBtn').onclick = startGame;
+$('againBtn').onclick = startGame;
+$('menuBtn').onclick = () => {
+  initMenu();
+  showScreen('menu');
+};
+$('quitBtn').onclick = () => {
+  clearInterval(state.timerId);
+  state.finished = true;
+  initMenu();
+  showScreen('menu');
+};
+
+// ==============================
+// ИНИЦИАЛИЗАЦИЯ
+// ==============================
+loadSettings();
+applyTheme();
+initMenu();
+showScreen('menu');
