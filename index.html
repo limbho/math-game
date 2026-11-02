@@ -15,13 +15,11 @@
 </head>
 <body>
 
-  <!-- ===================== ГЛАВНОЕ МЕНЮ ===================== -->
   <div class="screen menu-screen" id="menuScreen">
     <div class="menu-card">
       <h1 class="logo">🧮 Math Challenge</h1>
       <p class="subtitle">Решай примеры и физические формулы на скорость</p>
 
-      <!-- Режим игры -->
       <div class="menu-section">
         <label class="menu-label">Режим</label>
         <div class="option-group" data-group="mode">
@@ -31,13 +29,12 @@
         </div>
       </div>
 
-      <!-- Сложность -->
       <div class="menu-section">
         <label class="menu-label">Сложность</label>
         <div class="option-group" data-group="difficulty">
           <button class="option" data-value="easy">
             <span class="opt-title">Легко</span>
-            <span class="opt-sub">90 сек · простые числа</span>
+            <span class="opt-sub">90 сек · простые</span>
           </button>
           <button class="option active" data-value="normal">
             <span class="opt-title">Норма</span>
@@ -45,12 +42,11 @@
           </button>
           <button class="option" data-value="hard">
             <span class="opt-title">Сложно</span>
-            <span class="opt-sub">45 сек · большие числа</span>
+            <span class="opt-sub">45 сек · большие</span>
           </button>
         </div>
       </div>
 
-      <!-- Тема -->
       <div class="menu-section">
         <label class="menu-label">Тема</label>
         <div class="option-group" data-group="theme">
@@ -60,14 +56,11 @@
         </div>
       </div>
 
-      <!-- Рекорд -->
       <div class="best-score" id="menuBest">Рекорд: 0</div>
-
       <button class="play-btn" id="playBtn">Играть</button>
     </div>
   </div>
 
-  <!-- ===================== ИГРА ===================== -->
   <div class="screen game-screen hidden" id="gameScreen">
     <div class="game">
       <div class="stats">
@@ -76,18 +69,24 @@
         <span>Время: <b id="timer">60</b>с</span>
       </div>
 
-      <div id="question" class="question">7 × 8 = ?</div>
-      <div id="pointsBadge" class="points-badge"></div>
+      <!-- ПРОГРЕСС-БАР -->
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <!-- КОНТЕЙНЕР ДЛЯ ВОПРОСА (для анимации) -->
+      <div id="questionContainer" class="question-container">
+        <div id="question" class="question">7 × 8 = ?</div>
+        <div id="pointsBadge" class="points-badge"></div>
+      </div>
 
       <div id="answers" class="answers"></div>
 
       <div id="feedback" class="feedback"></div>
-
       <button class="quit-btn" id="quitBtn">← В меню</button>
     </div>
   </div>
 
-  <!-- ===================== ФИНАЛ ===================== -->
   <div class="screen end-screen hidden" id="endScreen">
     <div class="game-over">
       <h1>Игра окончена!</h1>
@@ -100,10 +99,8 @@
     </div>
   </div>
 
-  <!-- Конфетти -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
-
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
