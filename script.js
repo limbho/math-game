@@ -10,8 +10,6 @@ const DIFFICULTIES = {
 // ==============================
 // МОДУЛЬНАЯ БАЗА ФОРМУЛ
 // ==============================
-// left/right — формула, vars — список переменных, которые в ней есть.
-// label — как переменная выглядит на экране.
 const formulas = [
   // МЕХАНИКА
   { left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
@@ -27,25 +25,21 @@ const formulas = [
   { left: 'p',    right: 'm·v',            vars: [{ key: 'p', label: 'p' }, { key: 'm', label: 'm' }, { key: 'v', label: 'v' }] },
   { left: 'a',    right: '(v-v₀)/t',       vars: [{ key: 'a', label: 'a' }, { key: 'v', label: 'v' }, { key: 'v₀', label: 'v₀' }, { key: 't', label: 't' }] },
   { left: 'F',    right: 'G·m₁·m₂/r²',     vars: [{ key: 'F', label: 'F' }, { key: 'G', label: 'G' }, { key: 'm₁', label: 'm₁' }, { key: 'm₂', label: 'm₂' }, { key: 'r²', label: 'r²' }] },
-
   // ЭЛЕКТРИЧЕСТВО
   { left: 'I',    right: 'U/R',            vars: [{ key: 'I', label: 'I' }, { key: 'U', label: 'U' }, { key: 'R', label: 'R' }] },
   { left: 'U',    right: 'I·R',            vars: [{ key: 'U', label: 'U' }, { key: 'I', label: 'I' }, { key: 'R', label: 'R' }] },
   { left: 'P',    right: 'U·I',            vars: [{ key: 'P', label: 'P' }, { key: 'U', label: 'U' }, { key: 'I', label: 'I' }] },
   { left: 'Q',    right: 'I²·R·t',         vars: [{ key: 'Q', label: 'Q' }, { key: 'I', label: 'I²' }, { key: 'R', label: 'R' }, { key: 't', label: 't' }] },
   { left: 'R',    right: 'ρ·L/S',          vars: [{ key: 'R', label: 'R' }, { key: 'ρ', label: 'ρ' }, { key: 'L', label: 'L' }, { key: 'S', label: 'S' }] },
-
   // ДАВЛЕНИЕ И ЖИДКОСТИ
   { left: 'p',    right: 'F/S',            vars: [{ key: 'p', label: 'p' }, { key: 'F', label: 'F' }, { key: 'S', label: 'S' }] },
   { left: 'p',    right: 'ρ·g·h',          vars: [{ key: 'p', label: 'p' }, { key: 'ρ', label: 'ρ' }, { key: 'g', label: 'g' }, { key: 'h', label: 'h' }] },
   { left: 'Fа',   right: 'ρ·g·V',          vars: [{ key: 'Fа', label: 'Fа' }, { key: 'ρ', label: 'ρ' }, { key: 'g', label: 'g' }, { key: 'V', label: 'V' }] },
   { left: 'ρ',    right: 'm/V',            vars: [{ key: 'ρ', label: 'ρ' }, { key: 'm', label: 'm' }, { key: 'V', label: 'V' }] },
-
   // ТЕПЛОТА
   { left: 'Q',    right: 'c·m·Δt',         vars: [{ key: 'Q', label: 'Q' }, { key: 'c', label: 'c' }, { key: 'm', label: 'm' }, { key: 'Δt', label: 'Δt' }] },
   { left: 'Q',    right: 'λ·m',            vars: [{ key: 'Q', label: 'Q' }, { key: 'λ', label: 'λ' }, { key: 'm', label: 'm' }] },
   { left: 'Q',    right: 'L·m',            vars: [{ key: 'Q', label: 'Q' }, { key: 'L', label: 'L' }, { key: 'm', label: 'm' }] },
-
   // ВОЛНЫ
   { left: 'v',    right: 'λ·ν',            vars: [{ key: 'v', label: 'v' }, { key: 'λ', label: 'λ' }, { key: 'ν', label: 'ν' }] },
   { left: 'T',    right: '1/ν',            vars: [{ key: 'T', label: 'T' }, { key: 'ν', label: 'ν' }] },
@@ -58,7 +52,7 @@ const settings = { mode: 'arithmetic', difficulty: 'normal', theme: 'light' };
 const state = { 
   score: 0, time: 60, maxTime: 60, current: null, timerId: null, 
   combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false,
-  lastQuestionHash: null // Для защиты от повторов
+  formulaWeights: {} // Хранилище весов для формул
 };
 
 function loadSettings() {
@@ -94,57 +88,73 @@ function genArithmetic() {
   return { text: `${a} ${op} ${b} = ?`, answer, a, b, op, type: 'arithmetic' };
 }
 
-// МОДУЛЬНЫЙ ГЕНЕРАТОР ФОРМУЛ С ЗАЩИТОЙ ОТ ПОВТОРОВ
+// УМНЫЙ ГЕНЕРАТОР ФОРМУЛ (С ВЕСАМИ)
 function genFormula() {
-  let attempts = 0;
-  let question;
+  // 1. Собираем ВСЕ возможные вопросы из всех формул
+  let allPossibleQuestions = [];
   
-  do {
-    // 1. Берем случайную формулу
-    const f = formulas[Math.floor(Math.random() * formulas.length)];
-    
-    // 2. Выбираем, какую переменную скрыть
-    const hidden = f.vars[Math.floor(Math.random() * f.vars.length)];
-    
-    // 3. Формируем текст вопроса
-    let left = f.left;
-    let right = f.right;
-    
-    // Заменяем скрытую переменную на знак вопроса
-    if (left === hidden.key) left = '?';
-    if (right === hidden.key) right = '?';
-    // Заменяем вхождения переменной внутри выражений (например, r² в G·m₁·m₂/r²)
-    const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
-    right = right.replace(regex, '?');
-    left = left.replace(regex, '?');
+  formulas.forEach((f, fIndex) => {
+    f.vars.forEach((hidden, vIndex) => {
+      const key = `${fIndex}-${vIndex}`; // Уникальный ID для вопроса
+      
+      let left = f.left;
+      let right = f.right;
+      
+      // Заменяем скрытую переменную на '?'
+      if (left === hidden.key) left = '?';
+      if (right === hidden.key) right = '?';
+      const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
+      right = right.replace(regex, '?');
+      left = left.replace(regex, '?');
 
-    // 4. Генерируем варианты ответа
-    const wrongOpts = f.vars
-      .filter(v => v.key !== hidden.key)
-      .map(v => v.label)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
+      allPossibleQuestions.push({
+        key,
+        f,
+        hidden,
+        text: `${left} = ${right}`,
+        answer: hidden.label
+      });
+    });
+  });
 
-    const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
-    while (wrongOpts.length < 3) {
-      const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
-      if (rnd !== hidden.label && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
-    }
+  // 2. Выбираем вопрос с учетом весов
+  // Если вопрос выпадал часто, его "вес" (priority) растет, и шанс выпадения падает.
+  // Формула: (1 / (weight + 1)). Чем больше weight, тем меньше шанс.
+  let totalWeight = 0;
+  const weightedPool = allPossibleQuestions.map(q => {
+    const w = state.formulaWeights[q.key] || 0;
+    const chance = 1 / (w + 1); 
+    totalWeight += chance;
+    return { ...q, chance, currentWeight: totalWeight };
+  });
 
-    question = {
-      text: `${left} = ${right}`,
-      answer: hidden.label,
-      options: [hidden.label, ...wrongOpts],
-      type: 'formula',
-      hash: `${f.left}=${f.right}?${hidden.key}` // Уникальный ключ вопроса
-    };
-    
-    attempts++;
-    // Если выпал тот же вопрос, что и в прошлый раз — крутим ещё раз (макс 20 попыток)
-  } while (question.hash === state.lastQuestionHash && attempts < 20);
+  // 3. Кидаем кубик
+  const roll = Math.random() * totalWeight;
+  const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
 
-  state.lastQuestionHash = question.hash;
-  return question;
+  // 4. Увеличиваем вес выпавшего вопроса
+  state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
+
+  // 5. Генерируем неправильные варианты ответов
+  const wrongOpts = selected.f.vars
+    .filter(v => v.key !== selected.hidden.key)
+    .map(v => v.label)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+
+  // Если переменных меньше 4, добиваем случайными из других формул
+  const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
+  while (wrongOpts.length < 3) {
+    const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
+    if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
+  }
+
+  return {
+    text: selected.text,
+    answer: selected.answer,
+    options: [selected.answer, ...wrongOpts],
+    type: 'formula'
+  };
 }
 
 function genQuestion() {
@@ -221,7 +231,7 @@ function startGame() {
   state.correct = 0;
   state.wrong = 0;
   state.finished = false;
-  state.lastQuestionHash = null; // Сбрасываем защиту от повторов при старте
+  state.formulaWeights = {}; // Сбрасываем веса при новой игре
 
   $('score').textContent = 0;
   $('timer').textContent = state.time;
@@ -390,6 +400,7 @@ loadSettings();
 applyTheme();
 initMenu();
 showScreen('menu');
+
 // Автоматическая перезагрузка при обновлении Service Worker
 if ('serviceWorker' in navigator) {
   let refreshing = false;
