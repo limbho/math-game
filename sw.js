@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-game-v1';
+const CACHE_NAME = 'math-game-v4'; // <-- МЕНЯЙ ЭТУ ЦИФРУ КАЖДЫЙ РАЗ, КОГДА МЕНЯЕШЬ КОД
 const ASSETS = [
   './',
   './index.html',
@@ -7,27 +7,24 @@ const ASSETS = [
   './manifest.json',
 ];
 
-// Установка — кэшируем файлы
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+      .then(() => self.skipWaiting()) // Принудительно активируем новый SW
   );
 });
 
-// Активация — чистим старые кэши
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
-    ).then(() => self.clients.claim())
+    ).then(() => self.clients.claim()) // Захватываем контроль над страницей
   );
 });
 
-// Fetch — отдаём из кэша, если нет сети
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
