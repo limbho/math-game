@@ -10,8 +10,8 @@ const DIFFICULTIES = {
 // ==============================
 // МОДУЛЬНАЯ БАЗА ФОРМУЛ
 // ==============================
-// Каждая формула разбита на левую и правую части.
-// Переменные хранятся в массиве vars с их "красивыми" названиями.
+// left/right — формула, vars — список переменных, которые в ней есть.
+// label — как переменная выглядит на экране.
 const formulas = [
   // МЕХАНИКА
   { left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
@@ -20,7 +20,7 @@ const formulas = [
   { left: 's',    right: 'v·t',            vars: [{ key: 's', label: 's' }, { key: 'v', label: 'v' }, { key: 't', label: 't' }] },
   { left: 'F',    right: 'm·g',            vars: [{ key: 'm', label: 'm' }, { key: 'g', label: 'g' }, { key: 'F', label: 'F' }] },
   { left: 'P',    right: 'm·g',            vars: [{ key: 'm', label: 'm' }, { key: 'g', label: 'g' }, { key: 'P', label: 'P' }] },
-  { left: 'Eк',   right: '(m·v²)/2',       vars: [{ key: 'm', label: 'm' }, { key: 'v', label: 'v' }, { key: 'Eк', label: 'Eк' }] },
+  { left: 'Eк',   right: 'm·v²/2',         vars: [{ key: 'm', label: 'm' }, { key: 'v', label: 'v' }, { key: 'Eк', label: 'Eк' }] },
   { left: 'Eп',   right: 'm·g·h',          vars: [{ key: 'm', label: 'm' }, { key: 'g', label: 'g' }, { key: 'h', label: 'h' }, { key: 'Eп', label: 'Eп' }] },
   { left: 'A',    right: 'F·s',            vars: [{ key: 'A', label: 'A' }, { key: 'F', label: 'F' }, { key: 's', label: 's' }] },
   { left: 'N',    right: 'A/t',            vars: [{ key: 'N', label: 'N' }, { key: 'A', label: 'A' }, { key: 't', label: 't' }] },
@@ -55,7 +55,11 @@ const formulas = [
 // НАСТРОЙКИ И СОСТОЯНИЕ
 // ==============================
 const settings = { mode: 'arithmetic', difficulty: 'normal', theme: 'light' };
-const state = { score: 0, time: 60, maxTime: 60, current: null, timerId: null, combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false };
+const state = { 
+  score: 0, time: 60, maxTime: 60, current: null, timerId: null, 
+  combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false,
+  lastQuestionHash: null // Для защиты от повторов
+};
 
 function loadSettings() {
   try { Object.assign(settings, JSON.parse(localStorage.getItem('settings') || '{}')); } catch (e) {}
@@ -90,44 +94,57 @@ function genArithmetic() {
   return { text: `${a} ${op} ${b} = ?`, answer, a, b, op, type: 'arithmetic' };
 }
 
-// МОДУЛЬНЫЙ ГЕНЕРАТОР ФОРМУЛ
+// МОДУЛЬНЫЙ ГЕНЕРАТОР ФОРМУЛ С ЗАЩИТОЙ ОТ ПОВТОРОВ
 function genFormula() {
-  // 1. Берем случайную формулу из базы
-  const f = formulas[Math.floor(Math.random() * formulas.length)];
+  let attempts = 0;
+  let question;
   
-  // 2. Выбираем случайную переменную, которую скроем (это будет вопросом)
-  const hidden = f.vars[Math.floor(Math.random() * f.vars.length)];
-  
-  // 3. Выбираем 3 неправильных варианта из оставшихся переменных
-  const wrongOpts = f.vars
-    .filter(v => v.key !== hidden.key)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3)
-    .map(v => v.label);
+  do {
+    // 1. Берем случайную формулу
+    const f = formulas[Math.floor(Math.random() * formulas.length)];
+    
+    // 2. Выбираем, какую переменную скрыть
+    const hidden = f.vars[Math.floor(Math.random() * f.vars.length)];
+    
+    // 3. Формируем текст вопроса
+    let left = f.left;
+    let right = f.right;
+    
+    // Заменяем скрытую переменную на знак вопроса
+    if (left === hidden.key) left = '?';
+    if (right === hidden.key) right = '?';
+    // Заменяем вхождения переменной внутри выражений (например, r² в G·m₁·m₂/r²)
+    const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
+    right = right.replace(regex, '?');
+    left = left.replace(regex, '?');
 
-  // Если в формуле меньше 4 переменных, добиваем случайными из других формул
-  const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
-  while (wrongOpts.length < 3) {
-    const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
-    if (rnd !== hidden.label && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
-  }
+    // 4. Генерируем варианты ответа
+    const wrongOpts = f.vars
+      .filter(v => v.key !== hidden.key)
+      .map(v => v.label)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
 
-  // 4. Формируем текст вопроса. Заменяем переменную на "?" в нужной части.
-  let left = f.left;
-  let right = f.right;
-  
-  if (left === hidden.key) left = '?';
-  if (right === hidden.key) right = '?';
-  // Если переменная сложная (с индексом/степенью), заменяем именно её
-  right = right.replace(new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g'), '?');
-  left = left.replace(new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g'), '?');
+    const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
+    while (wrongOpts.length < 3) {
+      const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
+      if (rnd !== hidden.label && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
+    }
 
-  return {
-    text: `${left} = ${right}`,
-    answer: hidden.label,
-    options: [hidden.label, ...wrongOpts],
-    type: 'formula'
-  };
+    question = {
+      text: `${left} = ${right}`,
+      answer: hidden.label,
+      options: [hidden.label, ...wrongOpts],
+      type: 'formula',
+      hash: `${f.left}=${f.right}?${hidden.key}` // Уникальный ключ вопроса
+    };
+    
+    attempts++;
+    // Если выпал тот же вопрос, что и в прошлый раз — крутим ещё раз (макс 20 попыток)
+  } while (question.hash === state.lastQuestionHash && attempts < 20);
+
+  state.lastQuestionHash = question.hash;
+  return question;
 }
 
 function genQuestion() {
@@ -204,6 +221,7 @@ function startGame() {
   state.correct = 0;
   state.wrong = 0;
   state.finished = false;
+  state.lastQuestionHash = null; // Сбрасываем защиту от повторов при старте
 
   $('score').textContent = 0;
   $('timer').textContent = state.time;
@@ -222,11 +240,9 @@ function startTimer() {
     state.time--;
     $('timer').textContent = state.time;
 
-    // Обновляем прогресс-бар
     const pct = (state.time / state.maxTime) * 100;
     $('progressBar').style.width = `${pct}%`;
     
-    // Красим в красный, если времени мало
     if (pct < 20) $('progressBar').style.background = 'var(--error)';
     else if (pct < 50) $('progressBar').style.background = '#f39c12';
 
@@ -237,7 +253,6 @@ function startTimer() {
   }, 1000);
 }
 
-// АНИМАЦИЯ ВОПРОСА
 function nextQuestion() {
   if (state.finished) return;
 
@@ -270,7 +285,7 @@ function nextQuestion() {
     container.classList.remove('fade-out');
     container.classList.add('fade-in');
     setTimeout(() => container.classList.remove('fade-in'), 300);
-  }, 200); // Ждём, пока fade-out завершится
+  }, 200);
 }
 
 function checkAnswer(value) {
@@ -312,4 +327,75 @@ function checkAnswer(value) {
   setTimeout(() => { fb.textContent = ''; nextQuestion(); }, 900);
 }
 
-function updateCom
+function updateComboBadge() {
+  const badge = $('comboBadge');
+  const mult = comboMultiplier();
+  if (state.combo >= 2) {
+    badge.classList.remove('hidden');
+    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function endGame() {
+  state.finished = true;
+  clearInterval(state.timerId);
+
+  $('finalScore').textContent = state.score;
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  let bestLine = '';
+  if (state.score > best) {
+    localStorage.setItem('bestScore', state.score);
+    bestLine = '<p style="color:var(--success)">🎉 Новый рекорд!</p>';
+  } else {
+    bestLine = `<p style="color:var(--text-faint)">Рекорд: ${best}</p>`;
+  }
+
+  const statsLine = `
+    <p style="color:var(--text-muted);font-size:14px;margin:8px 0">
+      Верно: ${state.correct} · Ошибок: ${state.wrong} · Макс. комбо: ${state.maxCombo}
+    </p>
+  `;
+
+  $('endBest').innerHTML = bestLine + statsLine;
+  showScreen('end');
+}
+
+function initMenu() {
+  document.querySelectorAll('.option-group').forEach(group => {
+    const key = group.dataset.group;
+    group.querySelectorAll('.option').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === settings[key]);
+      btn.onclick = () => {
+        settings[key] = btn.dataset.value;
+        group.querySelectorAll('.option').forEach(b => b.classList.toggle('active', b === btn));
+        saveSettings();
+        if (key === 'theme') applyTheme();
+      };
+    });
+  });
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  $('menuBest').textContent = `Рекорд: ${best}`;
+}
+
+$('playBtn').onclick = startGame;
+$('againBtn').onclick = startGame;
+$('menuBtn').onclick = () => { initMenu(); showScreen('menu'); };
+$('quitBtn').onclick = () => { clearInterval(state.timerId); state.finished = true; initMenu(); showScreen('menu'); };
+
+loadSettings();
+applyTheme();
+initMenu();
+showScreen('menu');
+// Автоматическая перезагрузка при обновлении Service Worker
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
