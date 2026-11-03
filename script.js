@@ -382,10 +382,38 @@ function initMenu() {
         settings[key] = btn.dataset.value;
         group.querySelectorAll('.option').forEach(b => b.classList.toggle('active', b === btn));
         saveSettings();
-        if (key === 'theme') applyTheme();
       };
     });
   });
+
+  // Инициализация кнопки темы
+  const themeBtn = $('themeToggle');
+  if (themeBtn) {
+    // Показываем правильную иконку при загрузке
+    updateThemeButton(themeBtn);
+    
+    themeBtn.onclick = () => {
+      // Циклическое переключение: light -> dark -> system -> light
+      if (settings.theme === 'light') settings.theme = 'dark';
+      else if (settings.theme === 'dark') settings.theme = 'system';
+      else settings.theme = 'light';
+      
+      saveSettings();
+      applyTheme();
+      updateThemeButton(themeBtn);
+    };
+  }
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  $('menuBest').textContent = `Рекорд: ${best}`;
+}
+
+// Вспомогательная функция для иконки
+function updateThemeButton(btn) {
+  if (settings.theme === 'light') btn.textContent = '☀️';
+  else if (settings.theme === 'dark') btn.textContent = '🌙';
+  else btn.textContent = '🌗'; // Система
+}
 
   const best = Number(localStorage.getItem('bestScore') || 0);
   $('menuBest').textContent = `Рекорд: ${best}`;
