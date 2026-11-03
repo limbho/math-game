@@ -1,1 +1,8 @@
-
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.limbho.mathgame",
+        "sha256_cert_fingerprints": ["F2:B1:CD:41:8D:54:DC:23:2C:90:89:30:6C:70:81:05:76:0A:57:74:C7:0C:60:36:DB:3A:38:EE:2B:41:A4:93"]
+      }
+    }]
