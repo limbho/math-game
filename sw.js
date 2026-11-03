@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-game-v6'; // <-- МЕНЯЙ ЭТУ ЦИФРУ КАЖДЫЙ РАЗ, КОГДА МЕНЯЕШЬ КОД
+const CACHE_NAME = 'math-game-v5'; // <-- МЕНЯЙ ЭТУ ЦИФРУ КАЖДЫЙ РАЗ, КОГДА МЕНЯЕШЬ КОД
 const ASSETS = [
   './',
   './index.html',
