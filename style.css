@@ -51,6 +51,35 @@ body {
 .play-btn { width: 100%; padding: 16px; font-size: 17px; font-weight: 700; background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; font-family: inherit; }
 .play-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
 .play-btn:active { transform: translateY(0); }
+.menu-card {
+  position: relative; /* Чтобы кнопка позиционировалась относительно карточки */
+  /* ... остальные стили ... */
+}
+
+.theme-toggle-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--answer-bg);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  padding: 0;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
 
 /* ИГРА */
 .stats { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); margin-bottom: 12px; font-size: 15px; gap: 8px; }
