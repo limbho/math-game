@@ -15,14 +15,12 @@
 </head>
 <body>
 
-  <div class="screen menu-screen" id="menuScreen">
+    <div class="screen menu-screen" id="menuScreen">
     <div class="menu-card">
-          <div class="menu-card">
-      <!-- НОВАЯ КНОПКА ТЕМЫ -->
+      <!-- Кнопка смены темы в углу -->
       <button id="themeToggle" class="theme-toggle-btn" title="Сменить тему">☀️</button>
-      
-      <h1 class="logo">🧮 Math Challenge</h1>
-      <!-- ... остальной код ... -->
+
+      <!-- Заголовок (только один!) -->
       <h1 class="logo">🧮 Math Challenge</h1>
       <p class="subtitle">Решай примеры и физические формулы на скорость</p>
 
@@ -34,6 +32,31 @@
           <button class="option" data-value="mixed">Микс</button>
         </div>
       </div>
+
+      <div class="menu-section">
+        <label class="menu-label">Сложность</label>
+        <div class="option-group" data-group="difficulty">
+          <button class="option" data-value="easy">
+            <span class="opt-title">Легко</span>
+            <span class="opt-sub">90 сек · простые</span>
+          </button>
+          <button class="option active" data-value="normal">
+            <span class="opt-title">Норма</span>
+            <span class="opt-sub">60 сек · обычные</span>
+          </button>
+          <button class="option" data-value="hard">
+            <span class="opt-title">Сложно</span>
+            <span class="opt-sub">45 сек · большие</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Блок "Тема" мы полностью удалили, он больше не нужен -->
+
+      <div class="best-score" id="menuBest">Рекорд: 0</div>
+      <button class="play-btn" id="playBtn">Играть</button>
+    </div>
+  </div>
 
       <div class="menu-section">
         <label class="menu-label">Сложность</label>
