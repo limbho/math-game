@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-game-v8'; // ОБЯЗАТЕЛЬНО ПОМЕНЯЙ ЦИФРУ
+const CACHE_NAME = 'math-game-v9'; // ОБЯЗАТЕЛЬНО ПОМЕНЯЙ ЦИФРУ
 const ASSETS = [
   './', './index.html', './style.css', './script.js', './manifest.json',
 ];
