@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Math Challenge</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
@@ -15,12 +15,13 @@
 </head>
 <body>
 
-    <div class="screen menu-screen" id="menuScreen">
+  <!-- ГЛАВНОЕ МЕНЮ -->
+  <div class="screen menu-screen" id="menuScreen">
     <div class="menu-card">
+      
       <!-- Кнопка смены темы в углу -->
       <button id="themeToggle" class="theme-toggle-btn" title="Сменить тему">☀️</button>
 
-      <!-- Заголовок (только один!) -->
       <h1 class="logo">🧮 Math Challenge</h1>
       <p class="subtitle">Решай примеры и физические формулы на скорость</p>
 
@@ -38,50 +39,16 @@
         <div class="option-group" data-group="difficulty">
           <button class="option" data-value="easy">
             <span class="opt-title">Легко</span>
-            <span class="opt-sub">90 сек · простые</span>
+            <span class="opt-sub">90 сек</span>
           </button>
           <button class="option active" data-value="normal">
             <span class="opt-title">Норма</span>
-            <span class="opt-sub">60 сек · обычные</span>
+            <span class="opt-sub">60 сек</span>
           </button>
           <button class="option" data-value="hard">
             <span class="opt-title">Сложно</span>
-            <span class="opt-sub">45 сек · большие</span>
+            <span class="opt-sub">45 сек</span>
           </button>
-        </div>
-      </div>
-
-      <!-- Блок "Тема" мы полностью удалили, он больше не нужен -->
-
-      <div class="best-score" id="menuBest">Рекорд: 0</div>
-      <button class="play-btn" id="playBtn">Играть</button>
-    </div>
-  </div>
-
-      <div class="menu-section">
-        <label class="menu-label">Сложность</label>
-        <div class="option-group" data-group="difficulty">
-          <button class="option" data-value="easy">
-            <span class="opt-title">Легко</span>
-            <span class="opt-sub">90 сек · простые</span>
-          </button>
-          <button class="option active" data-value="normal">
-            <span class="opt-title">Норма</span>
-            <span class="opt-sub">60 сек · обычные</span>
-          </button>
-          <button class="option" data-value="hard">
-            <span class="opt-title">Сложно</span>
-            <span class="opt-sub">45 сек · большие</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="menu-section">
-        <label class="menu-label">Тема</label>
-        <div class="option-group" data-group="theme">
-          <button class="option" data-value="system">🌗 Система</button>
-          <button class="option active" data-value="light">☀️ Светлая</button>
-          <button class="option" data-value="dark">🌙 Тёмная</button>
         </div>
       </div>
 
@@ -90,6 +57,7 @@
     </div>
   </div>
 
+  <!-- ИГРА -->
   <div class="screen game-screen hidden" id="gameScreen">
     <div class="game">
       <div class="stats">
@@ -98,24 +66,22 @@
         <span>Время: <b id="timer">60</b>с</span>
       </div>
 
-      <!-- ПРОГРЕСС-БАР -->
       <div class="progress-container">
         <div class="progress-bar" id="progressBar"></div>
       </div>
 
-      <!-- КОНТЕЙНЕР ДЛЯ ВОПРОСА (для анимации) -->
       <div id="questionContainer" class="question-container">
         <div id="question" class="question">7 × 8 = ?</div>
         <div id="pointsBadge" class="points-badge"></div>
       </div>
 
       <div id="answers" class="answers"></div>
-
       <div id="feedback" class="feedback"></div>
       <button class="quit-btn" id="quitBtn">← В меню</button>
     </div>
   </div>
 
+  <!-- ФИНАЛ -->
   <div class="screen end-screen hidden" id="endScreen">
     <div class="game-over">
       <h1>Игра окончена!</h1>
