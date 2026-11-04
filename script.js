@@ -11,7 +11,6 @@ const DIFFICULTIES = {
 // МОДУЛЬНАЯ БАЗА ФОРМУЛ
 // ==============================
 const formulas = [
-  // МЕХАНИКА
   { left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
   { left: 'F',    right: 'm·a',            vars: [{ key: 'm', label: 'm' }, { key: 'a', label: 'a' }, { key: 'F', label: 'F' }] },
   { left: 'v',    right: 's/t',            vars: [{ key: 'v', label: 'v' }, { key: 's', label: 's' }, { key: 't', label: 't' }] },
@@ -25,22 +24,18 @@ const formulas = [
   { left: 'p',    right: 'm·v',            vars: [{ key: 'p', label: 'p' }, { key: 'm', label: 'm' }, { key: 'v', label: 'v' }] },
   { left: 'a',    right: '(v-v₀)/t',       vars: [{ key: 'a', label: 'a' }, { key: 'v', label: 'v' }, { key: 'v₀', label: 'v₀' }, { key: 't', label: 't' }] },
   { left: 'F',    right: 'G·m₁·m₂/r²',     vars: [{ key: 'F', label: 'F' }, { key: 'G', label: 'G' }, { key: 'm₁', label: 'm₁' }, { key: 'm₂', label: 'm₂' }, { key: 'r²', label: 'r²' }] },
-  // ЭЛЕКТРИЧЕСТВО
   { left: 'I',    right: 'U/R',            vars: [{ key: 'I', label: 'I' }, { key: 'U', label: 'U' }, { key: 'R', label: 'R' }] },
   { left: 'U',    right: 'I·R',            vars: [{ key: 'U', label: 'U' }, { key: 'I', label: 'I' }, { key: 'R', label: 'R' }] },
   { left: 'P',    right: 'U·I',            vars: [{ key: 'P', label: 'P' }, { key: 'U', label: 'U' }, { key: 'I', label: 'I' }] },
   { left: 'Q',    right: 'I²·R·t',         vars: [{ key: 'Q', label: 'Q' }, { key: 'I', label: 'I²' }, { key: 'R', label: 'R' }, { key: 't', label: 't' }] },
   { left: 'R',    right: 'ρ·L/S',          vars: [{ key: 'R', label: 'R' }, { key: 'ρ', label: 'ρ' }, { key: 'L', label: 'L' }, { key: 'S', label: 'S' }] },
-  // ДАВЛЕНИЕ И ЖИДКОСТИ
   { left: 'p',    right: 'F/S',            vars: [{ key: 'p', label: 'p' }, { key: 'F', label: 'F' }, { key: 'S', label: 'S' }] },
   { left: 'p',    right: 'ρ·g·h',          vars: [{ key: 'p', label: 'p' }, { key: 'ρ', label: 'ρ' }, { key: 'g', label: 'g' }, { key: 'h', label: 'h' }] },
   { left: 'Fа',   right: 'ρ·g·V',          vars: [{ key: 'Fа', label: 'Fа' }, { key: 'ρ', label: 'ρ' }, { key: 'g', label: 'g' }, { key: 'V', label: 'V' }] },
   { left: 'ρ',    right: 'm/V',            vars: [{ key: 'ρ', label: 'ρ' }, { key: 'm', label: 'm' }, { key: 'V', label: 'V' }] },
-  // ТЕПЛОТА
   { left: 'Q',    right: 'c·m·Δt',         vars: [{ key: 'Q', label: 'Q' }, { key: 'c', label: 'c' }, { key: 'm', label: 'm' }, { key: 'Δt', label: 'Δt' }] },
   { left: 'Q',    right: 'λ·m',            vars: [{ key: 'Q', label: 'Q' }, { key: 'λ', label: 'λ' }, { key: 'm', label: 'm' }] },
   { left: 'Q',    right: 'L·m',            vars: [{ key: 'Q', label: 'Q' }, { key: 'L', label: 'L' }, { key: 'm', label: 'm' }] },
-  // ВОЛНЫ
   { left: 'v',    right: 'λ·ν',            vars: [{ key: 'v', label: 'v' }, { key: 'λ', label: 'λ' }, { key: 'ν', label: 'ν' }] },
   { left: 'T',    right: '1/ν',            vars: [{ key: 'T', label: 'T' }, { key: 'ν', label: 'ν' }] },
 ];
@@ -52,7 +47,7 @@ const settings = { mode: 'arithmetic', difficulty: 'normal', theme: 'light' };
 const state = { 
   score: 0, time: 60, maxTime: 60, current: null, timerId: null, 
   combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false,
-  formulaWeights: {} // Хранилище весов для формул
+  formulaWeights: {}
 };
 
 function loadSettings() {
@@ -88,19 +83,14 @@ function genArithmetic() {
   return { text: `${a} ${op} ${b} = ?`, answer, a, b, op, type: 'arithmetic' };
 }
 
-// УМНЫЙ ГЕНЕРАТОР ФОРМУЛ (С ВЕСАМИ)
 function genFormula() {
-  // 1. Собираем ВСЕ возможные вопросы из всех формул
   let allPossibleQuestions = [];
-  
   formulas.forEach((f, fIndex) => {
     f.vars.forEach((hidden, vIndex) => {
-      const key = `${fIndex}-${vIndex}`; // Уникальный ID для вопроса
-      
+      const key = `${fIndex}-${vIndex}`;
       let left = f.left;
       let right = f.right;
       
-      // Заменяем скрытую переменную на '?'
       if (left === hidden.key) left = '?';
       if (right === hidden.key) right = '?';
       const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
@@ -117,9 +107,6 @@ function genFormula() {
     });
   });
 
-  // 2. Выбираем вопрос с учетом весов
-  // Если вопрос выпадал часто, его "вес" (priority) растет, и шанс выпадения падает.
-  // Формула: (1 / (weight + 1)). Чем больше weight, тем меньше шанс.
   let totalWeight = 0;
   const weightedPool = allPossibleQuestions.map(q => {
     const w = state.formulaWeights[q.key] || 0;
@@ -128,21 +115,17 @@ function genFormula() {
     return { ...q, chance, currentWeight: totalWeight };
   });
 
-  // 3. Кидаем кубик
   const roll = Math.random() * totalWeight;
   const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
 
-  // 4. Увеличиваем вес выпавшего вопроса
   state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
 
-  // 5. Генерируем неправильные варианты ответов
   const wrongOpts = selected.f.vars
     .filter(v => v.key !== selected.hidden.key)
     .map(v => v.label)
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
 
-  // Если переменных меньше 4, добиваем случайными из других формул
   const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
   while (wrongOpts.length < 3) {
     const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
@@ -164,7 +147,7 @@ function genQuestion() {
 }
 
 // ==============================
-// ПОДСЧЁТ ОЧКОВ И КОМБО
+// ОЧКИ И КОМБО
 // ==============================
 function calculatePoints(q) {
   if (q.type === 'formula') return 15;
@@ -231,7 +214,7 @@ function startGame() {
   state.correct = 0;
   state.wrong = 0;
   state.finished = false;
-  state.formulaWeights = {}; // Сбрасываем веса при новой игре
+  state.formulaWeights = {}; 
 
   $('score').textContent = 0;
   $('timer').textContent = state.time;
@@ -265,7 +248,6 @@ function startTimer() {
 
 function nextQuestion() {
   if (state.finished) return;
-
   const container = $('questionContainer');
   container.classList.add('fade-out');
 
@@ -316,125 +298,4 @@ function checkAnswer(value) {
     fb.textContent = mult > 1 ? `✅ Верно! +${totalPts} (×${mult})` : `✅ Верно! +${totalPts}`;
     fb.style.color = 'var(--success)';
 
-    if (state.current.type === 'arithmetic' && isBeautifulNumber(state.current.answer)) {
-      fireConfetti();
-      fb.textContent += ' 🎉';
-    }
-    if (state.combo > 0 && state.combo % 5 === 0) fireConfetti();
-
-    updateComboBadge();
-  } else {
-    state.combo = 0;
-    state.wrong++;
-    const penalty = Math.round(basePts / 2);
-    state.score = Math.max(0, state.score - penalty);
-    fb.textContent = `❌ Правильно: ${correct} (−${penalty})`;
-    fb.style.color = 'var(--error)';
-    updateComboBadge();
-  }
-
-  $('score').textContent = state.score;
-  setTimeout(() => { fb.textContent = ''; nextQuestion(); }, 900);
-}
-
-function updateComboBadge() {
-  const badge = $('comboBadge');
-  const mult = comboMultiplier();
-  if (state.combo >= 2) {
-    badge.classList.remove('hidden');
-    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
-  } else {
-    badge.classList.add('hidden');
-  }
-}
-
-function endGame() {
-  state.finished = true;
-  clearInterval(state.timerId);
-
-  $('finalScore').textContent = state.score;
-
-  const best = Number(localStorage.getItem('bestScore') || 0);
-  let bestLine = '';
-  if (state.score > best) {
-    localStorage.setItem('bestScore', state.score);
-    bestLine = '<p style="color:var(--success)">🎉 Новый рекорд!</p>';
-  } else {
-    bestLine = `<p style="color:var(--text-faint)">Рекорд: ${best}</p>`;
-  }
-
-  const statsLine = `
-    <p style="color:var(--text-muted);font-size:14px;margin:8px 0">
-      Верно: ${state.correct} · Ошибок: ${state.wrong} · Макс. комбо: ${state.maxCombo}
-    </p>
-  `;
-
-  $('endBest').innerHTML = bestLine + statsLine;
-  showScreen('end');
-}
-
-function initMenu() {
-  document.querySelectorAll('.option-group').forEach(group => {
-    const key = group.dataset.group;
-    group.querySelectorAll('.option').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.value === settings[key]);
-      btn.onclick = () => {
-        settings[key] = btn.dataset.value;
-        group.querySelectorAll('.option').forEach(b => b.classList.toggle('active', b === btn));
-        saveSettings();
-      };
-    });
-  });
-
-  // Инициализация кнопки темы
-  const themeBtn = $('themeToggle');
-  if (themeBtn) {
-    // Показываем правильную иконку при загрузке
-    updateThemeButton(themeBtn);
-    
-    themeBtn.onclick = () => {
-      // Циклическое переключение: light -> dark -> system -> light
-      if (settings.theme === 'light') settings.theme = 'dark';
-      else if (settings.theme === 'dark') settings.theme = 'system';
-      else settings.theme = 'light';
-      
-      saveSettings();
-      applyTheme();
-      updateThemeButton(themeBtn);
-    };
-  }
-
-  const best = Number(localStorage.getItem('bestScore') || 0);
-  $('menuBest').textContent = `Рекорд: ${best}`;
-}
-
-// Вспомогательная функция для иконки
-function updateThemeButton(btn) {
-  if (settings.theme === 'light') btn.textContent = '☀️';
-  else if (settings.theme === 'dark') btn.textContent = '🌙';
-  else btn.textContent = '🌗'; // Система
-}
-
-  const best = Number(localStorage.getItem('bestScore') || 0);
-  $('menuBest').textContent = `Рекорд: ${best}`;
-}
-
-$('playBtn').onclick = startGame;
-$('againBtn').onclick = startGame;
-$('menuBtn').onclick = () => { initMenu(); showScreen('menu'); };
-$('quitBtn').onclick = () => { clearInterval(state.timerId); state.finished = true; initMenu(); showScreen('menu'); };
-
-loadSettings();
-applyTheme();
-initMenu();
-showScreen('menu');
-
-// Автоматическая перезагрузка при обновлении Service Worker
-if ('serviceWorker' in navigator) {
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
-}
+    if (state.current.type === 'arithmetic' &&
