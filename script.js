@@ -7,9 +7,6 @@ const DIFFICULTIES = {
   hard:   { time: 45, addRange: [10, 99], mulRange: [3, 19] },
 };
 
-// ==============================
-// МОДУЛЬНАЯ БАЗА ФОРМУЛ
-// ==============================
 const formulas = [
   { left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
   { left: 'F',    right: 'm·a',            vars: [{ key: 'm', label: 'm' }, { key: 'a', label: 'a' }, { key: 'F', label: 'F' }] },
@@ -40,19 +37,10 @@ const formulas = [
   { left: 'T',    right: '1/ν',            vars: [{ key: 'T', label: 'T' }, { key: 'ν', label: 'ν' }] },
 ];
 
-// ==============================
-// НАСТРОЙКИ И СОСТОЯНИЕ
-// ==============================
 const settings = { mode: 'arithmetic', difficulty: 'normal', theme: 'light' };
-const state = { 
-  score: 0, time: 60, maxTime: 60, current: null, timerId: null, 
-  combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false,
-  formulaWeights: {}
-};
+const state = { score: 0, time: 60, maxTime: 60, current: null, timerId: null, combo: 0, maxCombo: 0, correct: 0, wrong: 0, finished: false, formulaWeights: {} };
 
-function loadSettings() {
-  try { Object.assign(settings, JSON.parse(localStorage.getItem('settings') || '{}')); } catch (e) {}
-}
+function loadSettings() { try { Object.assign(settings, JSON.parse(localStorage.getItem('settings') || '{}')); } catch (e) {} }
 function saveSettings() { localStorage.setItem('settings', JSON.stringify(settings)); }
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function $(id) { return document.getElementById(id); }
@@ -65,15 +53,11 @@ function applyTheme() {
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (settings.theme === 'system') applyTheme(); });
 
-// ==============================
-// ГЕНЕРАТОРЫ
-// ==============================
 function genArithmetic() {
   const cfg = DIFFICULTIES[settings.difficulty];
   const ops = ['+', '-', '×', '÷'];
   const op = ops[Math.floor(Math.random() * ops.length)];
   let a, b, answer;
-
   switch (op) {
     case '+': a = rand(...cfg.addRange); b = rand(...cfg.addRange); answer = a + b; break;
     case '-': a = rand(...cfg.addRange); b = rand(1, a); answer = a - b; break;
@@ -88,22 +72,13 @@ function genFormula() {
   formulas.forEach((f, fIndex) => {
     f.vars.forEach((hidden, vIndex) => {
       const key = `${fIndex}-${vIndex}`;
-      let left = f.left;
-      let right = f.right;
-      
+      let left = f.left, right = f.right;
       if (left === hidden.key) left = '?';
       if (right === hidden.key) right = '?';
       const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
       right = right.replace(regex, '?');
       left = left.replace(regex, '?');
-
-      allPossibleQuestions.push({
-        key,
-        f,
-        hidden,
-        text: `${left} = ${right}`,
-        answer: hidden.label
-      });
+      allPossibleQuestions.push({ key, f, hidden, text: `${left} = ${right}`, answer: hidden.label });
     });
   });
 
@@ -117,27 +92,15 @@ function genFormula() {
 
   const roll = Math.random() * totalWeight;
   const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
-
   state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
 
-  const wrongOpts = selected.f.vars
-    .filter(v => v.key !== selected.hidden.key)
-    .map(v => v.label)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
-
+  const wrongOpts = selected.f.vars.filter(v => v.key !== selected.hidden.key).map(v => v.label).sort(() => Math.random() - 0.5).slice(0, 3);
   const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
   while (wrongOpts.length < 3) {
     const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
     if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
   }
-
-  return {
-    text: selected.text,
-    answer: selected.answer,
-    options: [selected.answer, ...wrongOpts],
-    type: 'formula'
-  };
+  return { text: selected.text, answer: selected.answer, options: [selected.answer, ...wrongOpts], type: 'formula' };
 }
 
 function genQuestion() {
@@ -146,15 +109,11 @@ function genQuestion() {
   return Math.random() < 0.5 ? genArithmetic() : genFormula();
 }
 
-// ==============================
-// ОЧКИ И КОМБО
-// ==============================
 function calculatePoints(q) {
   if (q.type === 'formula') return 15;
   const { a, b, op } = q;
   const base = { '+': 3, '-': 3, '×': 6, '÷': 9 }[op] || 3;
-  const sizeBonus = Math.floor(Math.log2(Math.max(a, b) + 1)) * 2;
-  return base + sizeBonus;
+  return base + Math.floor(Math.log2(Math.max(a, b) + 1)) * 2;
 }
 
 function comboMultiplier() {
@@ -168,11 +127,7 @@ function comboMultiplier() {
 function isBeautifulNumber(n) {
   if (typeof n !== 'number' || n < 10) return false;
   const s = String(n);
-  if (/^(\d)\1+$/.test(s)) return true;
-  if (n % 100 === 0) return true;
-  if (n % 5 === 0 && n % 10 !== 0) return true;
-  if (s === [...s].reverse().join('')) return true;
-  if (n % 10 === 0) return true;
+  if (/^(\d)\1+$/.test(s) || n % 100 === 0 || (n % 5 === 0 && n % 10 !== 0) || s === [...s].reverse().join('') || n % 10 === 0) return true;
   return false;
 }
 
@@ -202,26 +157,14 @@ function showScreen(name) {
   $('endScreen').classList.toggle('hidden', name !== 'end');
 }
 
-// ==============================
-// ЛОГИКА ИГРЫ
-// ==============================
 function startGame() {
   state.score = 0;
   state.maxTime = DIFFICULTIES[settings.difficulty].time;
   state.time = state.maxTime;
-  state.combo = 0;
-  state.maxCombo = 0;
-  state.correct = 0;
-  state.wrong = 0;
-  state.finished = false;
-  state.formulaWeights = {}; 
-
-  $('score').textContent = 0;
-  $('timer').textContent = state.time;
-  $('progressBar').style.width = '100%';
-  $('progressBar').style.background = 'var(--accent)';
+  state.combo = 0; state.maxCombo = 0; state.correct = 0; state.wrong = 0; state.finished = false; state.formulaWeights = {}; 
+  $('score').textContent = 0; $('timer').textContent = state.time;
+  $('progressBar').style.width = '100%'; $('progressBar').style.background = 'var(--accent)';
   updateComboBadge();
-
   showScreen('game');
   nextQuestion();
   startTimer();
@@ -232,17 +175,11 @@ function startTimer() {
   state.timerId = setInterval(() => {
     state.time--;
     $('timer').textContent = state.time;
-
     const pct = (state.time / state.maxTime) * 100;
     $('progressBar').style.width = `${pct}%`;
-    
     if (pct < 20) $('progressBar').style.background = 'var(--error)';
     else if (pct < 50) $('progressBar').style.background = '#f39c12';
-
-    if (state.time <= 0) {
-      clearInterval(state.timerId);
-      endGame();
-    }
+    if (state.time <= 0) { clearInterval(state.timerId); endGame(); }
   }, 1000);
 }
 
@@ -250,21 +187,14 @@ function nextQuestion() {
   if (state.finished) return;
   const container = $('questionContainer');
   container.classList.add('fade-out');
-
   setTimeout(() => {
     state.current = genQuestion();
     $('question').textContent = state.current.text;
-
     const basePts = calculatePoints(state.current);
     const mult = comboMultiplier();
     const totalPts = Math.round(basePts * mult);
-
     $('pointsBadge').textContent = mult > 1 ? `+${totalPts} очков (${basePts} × ${mult})` : `+${totalPts} очков`;
-
-    const options = state.current.type === 'arithmetic' 
-      ? generateNumberOptions(state.current.answer) 
-      : state.current.options;
-
+    const options = state.current.type === 'arithmetic' ? generateNumberOptions(state.current.answer) : state.current.options;
     const ansContainer = $('answers');
     ansContainer.innerHTML = '';
     [...options].sort(() => Math.random() - 0.5).forEach(opt => {
@@ -273,7 +203,6 @@ function nextQuestion() {
       btn.onclick = () => checkAnswer(opt);
       ansContainer.appendChild(btn);
     });
-
     container.classList.remove('fade-out');
     container.classList.add('fade-in');
     setTimeout(() => container.classList.remove('fade-in'), 300);
@@ -282,130 +211,30 @@ function nextQuestion() {
 
 function checkAnswer(value) {
   if (state.finished) return;
-
   const correct = String(state.current.answer);
   const fb = $('feedback');
   const basePts = calculatePoints(state.current);
-
   if (String(value) === correct) {
     state.combo++;
     if (state.combo > state.maxCombo) state.maxCombo = state.combo;
     const mult = comboMultiplier();
     const totalPts = Math.round(basePts * mult);
-    state.score += totalPts;
-    state.correct++;
-
+    state.score += totalPts; state.correct++;
     fb.textContent = mult > 1 ? `✅ Верно! +${totalPts} (×${mult})` : `✅ Верно! +${totalPts}`;
     fb.style.color = 'var(--success)';
-
-    if (state.current.type === 'arithmetic' && isBeautifulNumber(state.current.answer)) {
-      fireConfetti();
-      fb.textContent += ' 🎉';
-    }
+    if (state.current.type === 'arithmetic' && isBeautifulNumber(state.current.answer)) { fireConfetti(); fb.textContent += ' 🎉'; }
     if (state.combo > 0 && state.combo % 5 === 0) fireConfetti();
-
     updateComboBadge();
   } else {
-    state.combo = 0;
-    state.wrong++;
+    state.combo = 0; state.wrong++;
     const penalty = Math.round(basePts / 2);
     state.score = Math.max(0, state.score - penalty);
     fb.textContent = `❌ Правильно: ${correct} (−${penalty})`;
     fb.style.color = 'var(--error)';
     updateComboBadge();
   }
-
   $('score').textContent = state.score;
   setTimeout(() => { fb.textContent = ''; nextQuestion(); }, 900);
 }
 
-function updateComboBadge() {
-  const badge = $('comboBadge');
-  const mult = comboMultiplier();
-  if (state.combo >= 2) {
-    badge.classList.remove('hidden');
-    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
-  } else {
-    badge.classList.add('hidden');
-  }
-}
-
-function endGame() {
-  state.finished = true;
-  clearInterval(state.timerId);
-
-  $('finalScore').textContent = state.score;
-
-  const best = Number(localStorage.getItem('bestScore') || 0);
-  let bestLine = '';
-  if (state.score > best) {
-    localStorage.setItem('bestScore', state.score);
-    bestLine = '<p style="color:var(--success)">🎉 Новый рекорд!</p>';
-  } else {
-    bestLine = `<p style="color:var(--text-faint)">Рекорд: ${best}</p>`;
-  }
-
-  const statsLine = `
-    <p style="color:var(--text-muted);font-size:14px;margin:8px 0">
-      Верно: ${state.correct} · Ошибок: ${state.wrong} · Макс. комбо: ${state.maxCombo}
-    </p>
-  `;
-
-  $('endBest').innerHTML = bestLine + statsLine;
-  showScreen('end');
-}
-
-function initMenu() {
-  document.querySelectorAll('.option-group').forEach(group => {
-    const key = group.dataset.group;
-    group.querySelectorAll('.option').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.value === settings[key]);
-      btn.onclick = () => {
-        settings[key] = btn.dataset.value;
-        group.querySelectorAll('.option').forEach(b => b.classList.toggle('active', b === btn));
-        saveSettings();
-      };
-    });
-  });
-
-  const themeBtn = $('themeToggle');
-  if (themeBtn) {
-    updateThemeButton(themeBtn);
-    themeBtn.onclick = () => {
-      if (settings.theme === 'light') settings.theme = 'dark';
-      else if (settings.theme === 'dark') settings.theme = 'system';
-      else settings.theme = 'light';
-      saveSettings();
-      applyTheme();
-      updateThemeButton(themeBtn);
-    };
-  }
-
-  const best = Number(localStorage.getItem('bestScore') || 0);
-  $('menuBest').textContent = `Рекорд: ${best}`;
-}
-
-function updateThemeButton(btn) {
-  if (settings.theme === 'light') btn.textContent = '☀️';
-  else if (settings.theme === 'dark') btn.textContent = '🌙';
-  else btn.textContent = '🌗';
-}
-
-$('playBtn').onclick = startGame;
-$('againBtn').onclick = startGame;
-$('menuBtn').onclick = () => { initMenu(); showScreen('menu'); };
-$('quitBtn').onclick = () => { clearInterval(state.timerId); state.finished = true; initMenu(); showScreen('menu'); };
-
-loadSettings();
-applyTheme();
-initMenu();
-showScreen('menu');
-
-if ('serviceWorker' in navigator) {
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) return;
-    refreshing = true;
-    window.location.reload();
-  });
-}
+function updateComboBadge
