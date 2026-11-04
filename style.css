@@ -24,38 +24,20 @@ body {
   background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 12%, var(--bg-3) 24%, var(--bg-4) 36%, var(--bg-5) 48%, var(--bg-6) 60%, var(--bg-7) 72%, var(--bg-8) 84%, var(--bg-9) 100%);
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   margin: 0; padding: 16px; color: var(--text); transition: background 0.4s, color 0.3s;
+  overflow-x: hidden; /* Защита от горизонтального скролла */
 }
 
-.screen { width: 100%; max-width: 460px; }
+.screen { width: 100%; max-width: 460px; display: flex; justify-content: center; }
 .hidden { display: none !important; }
 
 /* МЕНЮ */
 .menu-card, .game, .game-over {
   background: var(--card-bg); padding: 28px; border-radius: 16px;
   box-shadow: 0 20px 60px var(--card-shadow); transition: background 0.3s, box-shadow 0.3s;
-}
-.logo { font-size: 28px; text-align: center; margin: 0 0 8px; color: var(--text); }
-.subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin: 0 0 24px; }
-.menu-section { margin-bottom: 20px; }
-.menu-label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
-.option-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.option {
-  padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--answer-bg); color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: inherit;
-}
-.option:hover { border-color: var(--accent); color: var(--accent); }
-.option.active { background: var(--accent); border-color: var(--accent); color: white; }
-.opt-title { font-size: 14px; }
-.opt-sub { font-size: 10px; opacity: 0.8; font-weight: 500; }
-.option.active .opt-sub { opacity: 0.9; }
-.best-score { text-align: center; color: var(--text-faint); font-size: 14px; margin: 16px 0; }
-.play-btn { width: 100%; padding: 16px; font-size: 17px; font-weight: 700; background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; font-family: inherit; }
-.play-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-.play-btn:active { transform: translateY(0); }
-.menu-card {
-  position: relative; /* Чтобы кнопка позиционировалась относительно карточки */
-  /* ... остальные стили ... */
+  width: 100%; position: relative; /* Для позиционирования кнопки темы */
 }
 
+/* КНОПКА ТЕМЫ В УГЛУ */
 .theme-toggle-btn {
   position: absolute;
   top: 16px;
@@ -73,43 +55,49 @@ body {
   justify-content: center;
   transition: 0.2s;
   padding: 0;
+  z-index: 10;
 }
-
 .theme-toggle-btn:hover {
   border-color: var(--accent);
   background: var(--accent);
   color: white;
 }
 
+.logo { font-size: 26px; text-align: center; margin: 0 0 8px; color: var(--text); }
+.subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin: 0 0 24px; padding: 0 20px; }
+.menu-section { margin-bottom: 20px; }
+.menu-label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
+
+.option-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.option {
+  padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--answer-bg); color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: inherit;
+}
+.option:hover { border-color: var(--accent); color: var(--accent); }
+.option.active { background: var(--accent); border-color: var(--accent); color: white; }
+.opt-title { font-size: 14px; }
+.opt-sub { font-size: 10px; opacity: 0.8; font-weight: 500; }
+.option.active .opt-sub { opacity: 0.9; }
+
+.best-score { text-align: center; color: var(--text-faint); font-size: 14px; margin: 16px 0; }
+.play-btn { width: 100%; padding: 16px; font-size: 17px; font-weight: 700; background: var(--accent); color: white; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+.play-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.play-btn:active { transform: translateY(0); }
+
 /* ИГРА */
 .stats { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); margin-bottom: 12px; font-size: 15px; gap: 8px; }
 .stats b { color: var(--accent); }
 
-/* ПРОГРЕСС-БАР */
-.progress-container {
-  width: 100%; height: 6px; background: var(--border); border-radius: 4px; margin-bottom: 24px; overflow: hidden;
-}
-.progress-bar {
-  height: 100%; background: var(--accent); width: 100%; transition: width 1s linear, background 0.3s; border-radius: 4px;
-}
+.progress-container { width: 100%; height: 6px; background: var(--border); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--accent); width: 100%; transition: width 1s linear, background 0.3s; border-radius: 4px; }
 
-/* АНИМАЦИЯ ВОПРОСА */
-.question-container {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.question-container.fade-out {
-  opacity: 0; transform: translateY(-10px);
-}
-.question-container.fade-in {
-  animation: slideIn 0.3s ease forwards;
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+.question-container { transition: opacity 0.2s ease, transform 0.2s ease; }
+.question-container.fade-out { opacity: 0; transform: translateY(-10px); }
+.question-container.fade-in { animation: slideIn 0.3s ease forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
 .combo { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; animation: pulse 0.5s ease; }
 @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
 .question { font-size: 32px; text-align: center; margin: 0 0 8px; font-weight: bold; color: var(--text); min-height: 48px; }
 .points-badge { text-align: center; color: var(--accent); font-weight: 600; font-size: 14px; margin-bottom: 20px; opacity: 0.75; }
 
@@ -132,7 +120,10 @@ body {
 .end-actions .quit-btn { margin: 0; }
 
 @media (max-width: 400px) {
-  .option-group { grid-template-columns: 1fr; }
+  .menu-card, .game, .game-over { padding: 20px; }
+  .logo { font-size: 22px; }
+  .option-group { grid-template-columns: 1fr; } /* Кнопки в столбик на узких экранах */
   .question { font-size: 26px; }
   .answers button { font-size: 17px; padding: 14px; }
+  .theme-toggle-btn { top: 12px; right: 12px; width: 36px; height: 36px; font-size: 16px; }
 }
