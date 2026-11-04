@@ -298,4 +298,114 @@ function checkAnswer(value) {
     fb.textContent = mult > 1 ? `✅ Верно! +${totalPts} (×${mult})` : `✅ Верно! +${totalPts}`;
     fb.style.color = 'var(--success)';
 
-    if (state.current.type === 'arithmetic' &&
+    if (state.current.type === 'arithmetic' && isBeautifulNumber(state.current.answer)) {
+      fireConfetti();
+      fb.textContent += ' 🎉';
+    }
+    if (state.combo > 0 && state.combo % 5 === 0) fireConfetti();
+
+    updateComboBadge();
+  } else {
+    state.combo = 0;
+    state.wrong++;
+    const penalty = Math.round(basePts / 2);
+    state.score = Math.max(0, state.score - penalty);
+    fb.textContent = `❌ Правильно: ${correct} (−${penalty})`;
+    fb.style.color = 'var(--error)';
+    updateComboBadge();
+  }
+
+  $('score').textContent = state.score;
+  setTimeout(() => { fb.textContent = ''; nextQuestion(); }, 900);
+}
+
+function updateComboBadge() {
+  const badge = $('comboBadge');
+  const mult = comboMultiplier();
+  if (state.combo >= 2) {
+    badge.classList.remove('hidden');
+    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function endGame() {
+  state.finished = true;
+  clearInterval(state.timerId);
+
+  $('finalScore').textContent = state.score;
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  let bestLine = '';
+  if (state.score > best) {
+    localStorage.setItem('bestScore', state.score);
+    bestLine = '<p style="color:var(--success)">🎉 Новый рекорд!</p>';
+  } else {
+    bestLine = `<p style="color:var(--text-faint)">Рекорд: ${best}</p>`;
+  }
+
+  const statsLine = `
+    <p style="color:var(--text-muted);font-size:14px;margin:8px 0">
+      Верно: ${state.correct} · Ошибок: ${state.wrong} · Макс. комбо: ${state.maxCombo}
+    </p>
+  `;
+
+  $('endBest').innerHTML = bestLine + statsLine;
+  showScreen('end');
+}
+
+function initMenu() {
+  document.querySelectorAll('.option-group').forEach(group => {
+    const key = group.dataset.group;
+    group.querySelectorAll('.option').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === settings[key]);
+      btn.onclick = () => {
+        settings[key] = btn.dataset.value;
+        group.querySelectorAll('.option').forEach(b => b.classList.toggle('active', b === btn));
+        saveSettings();
+      };
+    });
+  });
+
+  const themeBtn = $('themeToggle');
+  if (themeBtn) {
+    updateThemeButton(themeBtn);
+    themeBtn.onclick = () => {
+      if (settings.theme === 'light') settings.theme = 'dark';
+      else if (settings.theme === 'dark') settings.theme = 'system';
+      else settings.theme = 'light';
+      saveSettings();
+      applyTheme();
+      updateThemeButton(themeBtn);
+    };
+  }
+
+  const best = Number(localStorage.getItem('bestScore') || 0);
+  $('menuBest').textContent = `Рекорд: ${best}`;
+}
+
+function updateThemeButton(btn) {
+  if (settings.theme === 'light') btn.textContent = '☀️';
+  else if (settings.theme === 'dark') btn.textContent = '🌙';
+  else btn.textContent = '🌗';
+}
+
+$('playBtn').onclick = startGame;
+$('againBtn').onclick = startGame;
+$('menuBtn').onclick = () => { initMenu(); showScreen('menu'); };
+$('quitBtn').onclick = () => { clearInterval(state.timerId); state.finished = true; initMenu(); showScreen('menu'); };
+
+loadSettings();
+applyTheme();
+initMenu();
+showScreen('menu');
+
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
