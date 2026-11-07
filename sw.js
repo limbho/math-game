@@ -1,14 +1,10 @@
-const CACHE_NAME = 'math-game-v11'; // ОБЯЗАТЕЛЬНО ПОМЕНЯЙ ЦИФРУ
+const CACHE_NAME = 'math-game-network-first-v1'; 
 const ASSETS = [
   './', './index.html', './style.css', './script.js', './manifest.json',
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  self.skipWaiting(); // Сразу активируем новый SW
 });
 
 self.addEventListener('activate', event => {
@@ -20,7 +16,17 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Стратегия Network First: пытаемся скачать из сети, если не выходит - берем из кэша
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        // Если скачали успешно, обновляем кэш и отдаем пользователю
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, resClone);
+        });
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
