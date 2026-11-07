@@ -24,27 +24,17 @@ body {
   background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 12%, var(--bg-3) 24%, var(--bg-4) 36%, var(--bg-5) 48%, var(--bg-6) 60%, var(--bg-7) 72%, var(--bg-8) 84%, var(--bg-9) 100%);
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   margin: 0; padding: 16px; color: var(--text); transition: background 0.4s, color 0.3s;
-  overflow-x: hidden; /* Жестко убираем горизонтальный скролл */
+  overflow-x: hidden;
 }
 
-.screen { 
-  width: 100%; 
-  max-width: 460px; 
-  display: flex; 
-  justify-content: center; 
-}
-
+.screen { width: 100%; max-width: 460px; display: flex; justify-content: center; }
 .hidden { display: none !important; }
 
 /* Карточки */
 .menu-card, .game, .game-over {
-  background: var(--card-bg); 
-  padding: 28px; 
-  border-radius: 16px;
-  box-shadow: 0 20px 60px var(--card-shadow); 
-  transition: background 0.3s, box-shadow 0.3s;
-  width: 100%; 
-  position: relative; 
+  background: var(--card-bg); padding: 28px; border-radius: 16px;
+  box-shadow: 0 20px 60px var(--card-shadow); transition: background 0.3s, box-shadow 0.3s;
+  width: 100%; position: relative;
 }
 
 /* Кнопка темы */
@@ -64,6 +54,8 @@ body {
 .menu-label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
 
 .option-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.option-group[data-group="playType"] { grid-template-columns: 1fr 1fr; } /* Для типа игры 2 колонки */
+
 .option {
   padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--answer-bg); 
   color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s; 
