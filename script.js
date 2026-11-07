@@ -385,12 +385,31 @@ applyTheme();
 initMenu();
 showScreen('menu');
 
-// Автообновление при смене SW
+// Автоматическое обновление страницы при выходе новой версии
 if ('serviceWorker' in navigator) {
   let refreshing = false;
+  
+  // Если контроль над страницей перешел к новому SW — перезагружаем страницу
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
+  });
+
+  // Проверяем обновления при загрузке страницы
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.update(); // Принудительно ищем обновления при каждом запуске
+      
+      // Если нашли новый файл SW, сообщаем ему, чтобы он активировался
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    }).catch(err => console.log('SW ошибка:', err));
   });
 }
