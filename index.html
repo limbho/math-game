@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -36,16 +36,24 @@
         <div class="option-group" data-group="difficulty">
           <button class="option" data-value="easy">
             <span class="opt-title">Легко</span>
-            <span class="opt-sub">90 сек · простые</span>
+            <span class="opt-sub">простые числа</span>
           </button>
           <button class="option active" data-value="normal">
             <span class="opt-title">Норма</span>
-            <span class="opt-sub">60 сек · обычные</span>
+            <span class="opt-sub">обычные</span>
           </button>
           <button class="option" data-value="hard">
             <span class="opt-title">Сложно</span>
-            <span class="opt-sub">45 сек · большие</span>
+            <span class="opt-sub">большие числа</span>
           </button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <label class="menu-label">Тип игры</label>
+        <div class="option-group" data-group="playType">
+          <button class="option active" data-value="time">На время</button>
+          <button class="option" data-value="lives">Выживание</button>
         </div>
       </div>
 
@@ -60,10 +68,12 @@
       <div class="stats">
         <span>Счёт: <b id="score">0</b></span>
         <span class="combo hidden" id="comboBadge">🔥 ×1</span>
-        <span>Время: <b id="timer">60</b>с</span>
+        <span id="timerContainer">Время: <b id="timer">60</b>с</span>
+        <span id="livesContainer" class="hidden">Жизни: <b id="lives" style="color:var(--error); font-size:18px;">❤️❤️❤️</b></span>
       </div>
 
-      <div class="progress-container">
+      <!-- Прогресс-бар скрываем, если играем на выживание -->
+      <div class="progress-container" id="progressContainer">
         <div class="progress-bar" id="progressBar"></div>
       </div>
 
