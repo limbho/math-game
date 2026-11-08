@@ -1,5 +1,5 @@
 // ==============================
-// КОНФИГУРАЦИЯ СЛОЖНОСТИ
+// КОНФИГУРАЦИЯ СЛОЖНОСТИ 
 // ==============================
 const DIFFICULTIES = {
   easy:   { time: 90, addRange: [1, 20],  mulRange: [2, 9],  hideCount: 1, hardFormulas: false },
