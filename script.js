@@ -88,20 +88,76 @@ function genArithmetic() {
 }
 
 function genFormula() {
+  const cfg = DIFFICULTIES[settings.difficulty];
   let allPossibleQuestions = [];
-  formulas.forEach((f, fIndex) => {
-    f.vars.forEach((hidden, vIndex) => {
-      const key = `${fIndex}-${vIndex}`;
-      let left = f.left;
-      let right = f.right;
-      if (left === hidden.key) left = '?';
-      if (right === hidden.key) right = '?';
-      const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hidden.key}(?![a-zA-Zа-яА-Я])`, 'g');
+  
+  // Фильтруем формулы в зависимости от сложности
+  const availableFormulas = formulas.filter(f => !f.isHard || cfg.hardFormulas);
+
+  availableFormulas.forEach((f, fIndex) => {
+    // Определяем, сколько переменных скрывать
+    let hideCount = cfg.hideCount;
+    // Если переменных меньше, чем мы хотим скрыть, скрываем столько, сколько есть (но оставляем хотя бы 1)
+    if (hideCount >= f.vars.length) hideCount = f.vars.length - 1;
+    
+    // Перемешиваем переменные, чтобы выбрать случайные для скрытия
+    const shuffledVars = [...f.vars].sort(() => Math.random() - 0.5);
+    const hiddenVars = shuffledVars.slice(0, hideCount); // Какие скрываем
+    const targetVar = hiddenVars[0]; // Какую именно переменную нужно найти
+
+    let left = f.left;
+    let right = f.right;
+
+    // Заменяем ВСЕ выбранные переменные на '?'
+    hiddenVars.forEach(hv => {
+      if (left === hv.key) left = '?';
+      if (right === hv.key) right = '?';
+      const regex = new RegExp(`(?<![a-zA-Zа-яА-Я])${hv.key}(?![a-zA-Zа-яА-Я])`, 'g');
       right = right.replace(regex, '?');
       left = left.replace(regex, '?');
-      allPossibleQuestions.push({ key, f, hidden, text: `${left} = ${right}`, answer: hidden.label });
+    });
+
+    // Формируем текст вопроса
+    let questionText = `${left} = ${right}`;
+    if (hideCount > 1) {
+      // Если скрыто несколько, уточняем, что именно ищем
+      questionText += ` <br><span style="font-size:16px; color:var(--text-muted)">(Найди: ${targetVar.label})</span>`;
+    }
+
+    const key = `${fIndex}-${hiddenVars.map(v => v.key).join('-')}`;
+    
+    allPossibleQuestions.push({
+      key,
+      f,
+      hidden: targetVar,
+      text: questionText,
+      answer: targetVar.label
     });
   });
+
+  // Дальше идет логика взвешенного выбора (как было раньше)
+  let totalWeight = 0;
+  const weightedPool = allPossibleQuestions.map(q => {
+    const w = state.formulaWeights[q.key] || 0;
+    const chance = 1 / (w + 1); 
+    totalWeight += chance;
+    return { ...q, chance, currentWeight: totalWeight };
+  });
+
+  const roll = Math.random() * totalWeight;
+  const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
+  state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
+
+  // Генерируем варианты ответов
+  const wrongOpts = selected.f.vars.filter(v => v.key !== selected.hidden.key).map(v => v.label).sort(() => Math.random() - 0.5).slice(0, 3);
+  const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
+  while (wrongOpts.length < 3) {
+    const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
+    if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
+  }
+  
+  return { text: selected.text, answer: selected.answer, options: [selected.answer, ...wrongOpts], type: 'formula' };
+}
 
   let totalWeight = 0;
   const weightedPool = allPossibleQuestions.map(q => {
@@ -234,7 +290,7 @@ function nextQuestion() {
   container.classList.add('fade-out');
   setTimeout(() => {
     state.current = genQuestion();
-    $('question').textContent = state.current.text;
+    $('question').innerHTML = state.current.text;
     const basePts = calculatePoints(state.current);
     const mult = comboMultiplier();
     const totalPts = Math.round(basePts * mult);
