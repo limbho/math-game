@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-game-network-first-v1'; 
+const CACHE_NAME = 'math-game-network-first-v2'; 
 const ASSETS = [
   './', './index.html', './style.css', './script.js', './manifest.json',
 ];
