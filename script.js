@@ -317,9 +317,9 @@ function checkAnswer(value) {
       $('lives').textContent = hearts;
       
       if (state.lives <= 0) {
-        setTimeout(endGame, 900);
         $('score').textContent = state.score;
-        return;
+        setTimeout(endGame, 900);
+        return; // <--- Теперь этот return находится внутри функции, как и положено
       }
     }
   }
