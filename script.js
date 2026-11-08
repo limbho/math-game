@@ -10,9 +10,8 @@ const DIFFICULTIES = {
 // ==============================
 // МОДУЛЬНАЯ БАЗА ФОРМУЛ
 // ==============================
-// isHard: true означает, что формула появляется только на сложности "Норма" и "Сложно"
 const formulas = [
-  // --- БАЗОВЫЕ (МЕХАНИКА) ---
+  // Базовые формулы (доступны на всех уровнях)
   { left: 'F',    right: 'm·a',            vars: [{ key: 'm', label: 'm' }, { key: 'a', label: 'a' }, { key: 'F', label: 'F' }] },
   { left: 'v',    right: 's/t',            vars: [{ key: 'v', label: 'v' }, { key: 's', label: 's' }, { key: 't', label: 't' }] },
   { left: 's',    right: 'v·t',            vars: [{ key: 's', label: 's' }, { key: 'v', label: 'v' }, { key: 't', label: 't' }] },
@@ -24,7 +23,7 @@ const formulas = [
   { left: 'p',    right: 'F/S',            vars: [{ key: 'p', label: 'p' }, { key: 'F', label: 'F' }, { key: 'S', label: 'S' }] },
   { left: 'ρ',    right: 'm/V',            vars: [{ key: 'ρ', label: 'ρ' }, { key: 'm', label: 'm' }, { key: 'V', label: 'V' }] },
 
-  // --- СЛОЖНЫЕ (МОЛЕКУЛЯРКА, ЭЛЕКТРИЧЕСТВО, ОПТИКА) ---
+  // Сложные формулы (появляются только на "Норма" и "Сложно")
   { isHard: true, left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
   { isHard: true, left: 'P',    right: 'm·g',            vars: [{ key: 'm', label: 'm' }, { key: 'g', label: 'g' }, { key: 'P', label: 'P' }] },
   { isHard: true, left: 'Eк',   right: 'm·v²/2',         vars: [{ key: 'm', label: 'm' }, { key: 'v', label: 'v' }, { key: 'Eк', label: 'Eк' }] },
@@ -91,24 +90,19 @@ function genFormula() {
   const cfg = DIFFICULTIES[settings.difficulty];
   let allPossibleQuestions = [];
   
-  // Фильтруем формулы в зависимости от сложности
   const availableFormulas = formulas.filter(f => !f.isHard || cfg.hardFormulas);
 
   availableFormulas.forEach((f, fIndex) => {
-    // Определяем, сколько переменных скрывать
     let hideCount = cfg.hideCount;
-    // Если переменных меньше, чем мы хотим скрыть, скрываем столько, сколько есть (но оставляем хотя бы 1)
     if (hideCount >= f.vars.length) hideCount = f.vars.length - 1;
     
-    // Перемешиваем переменные, чтобы выбрать случайные для скрытия
     const shuffledVars = [...f.vars].sort(() => Math.random() - 0.5);
-    const hiddenVars = shuffledVars.slice(0, hideCount); // Какие скрываем
-    const targetVar = hiddenVars[0]; // Какую именно переменную нужно найти
+    const hiddenVars = shuffledVars.slice(0, hideCount);
+    const targetVar = hiddenVars[0];
 
     let left = f.left;
     let right = f.right;
 
-    // Заменяем ВСЕ выбранные переменные на '?'
     hiddenVars.forEach(hv => {
       if (left === hv.key) left = '?';
       if (right === hv.key) right = '?';
@@ -117,10 +111,8 @@ function genFormula() {
       left = left.replace(regex, '?');
     });
 
-    // Формируем текст вопроса
     let questionText = `${left} = ${right}`;
     if (hideCount > 1) {
-      // Если скрыто несколько, уточняем, что именно ищем
       questionText += ` <br><span style="font-size:16px; color:var(--text-muted)">(Найди: ${targetVar.label})</span>`;
     }
 
@@ -135,7 +127,6 @@ function genFormula() {
     });
   });
 
-  // Дальше идет логика взвешенного выбора (как было раньше)
   let totalWeight = 0;
   const weightedPool = allPossibleQuestions.map(q => {
     const w = state.formulaWeights[q.key] || 0;
@@ -148,7 +139,6 @@ function genFormula() {
   const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
   state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
 
-  // Генерируем варианты ответов
   const wrongOpts = selected.f.vars.filter(v => v.key !== selected.hidden.key).map(v => v.label).sort(() => Math.random() - 0.5).slice(0, 3);
   const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
   while (wrongOpts.length < 3) {
@@ -156,27 +146,6 @@ function genFormula() {
     if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
   }
   
-  return { text: selected.text, answer: selected.answer, options: [selected.answer, ...wrongOpts], type: 'formula' };
-}
-
-  let totalWeight = 0;
-  const weightedPool = allPossibleQuestions.map(q => {
-    const w = state.formulaWeights[q.key] || 0;
-    const chance = 1 / (w + 1); 
-    totalWeight += chance;
-    return { ...q, chance, currentWeight: totalWeight };
-  });
-
-  const roll = Math.random() * totalWeight;
-  const selected = weightedPool.find(q => q.currentWeight >= roll) || weightedPool[weightedPool.length - 1];
-  state.formulaWeights[selected.key] = (state.formulaWeights[selected.key] || 0) + 1;
-
-  const wrongOpts = selected.f.vars.filter(v => v.key !== selected.hidden.key).map(v => v.label).sort(() => Math.random() - 0.5).slice(0, 3);
-  const allLabels = formulas.flatMap(fm => fm.vars.map(v => v.label));
-  while (wrongOpts.length < 3) {
-    const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
-    if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
-  }
   return { text: selected.text, answer: selected.answer, options: [selected.answer, ...wrongOpts], type: 'formula' };
 }
 
@@ -253,7 +222,6 @@ function startGame() {
   $('progressBar').style.width = '100%';
   $('progressBar').style.background = 'var(--accent)';
 
-  // Настройка интерфейса под режим
   if (settings.playType === 'time') {
     $('timerContainer').classList.remove('hidden');
     $('livesContainer').classList.add('hidden');
@@ -290,7 +258,7 @@ function nextQuestion() {
   container.classList.add('fade-out');
   setTimeout(() => {
     state.current = genQuestion();
-    $('question').innerHTML = state.current.text;
+    $('question').innerHTML = state.current.text; // Используем innerHTML для поддержки <br>
     const basePts = calculatePoints(state.current);
     const mult = comboMultiplier();
     const totalPts = Math.round(basePts * mult);
@@ -343,14 +311,13 @@ function checkAnswer(value) {
     fb.style.color = 'var(--error)';
     updateComboBadge();
 
-    // Логика для режима выживания
     if (settings.playType === 'lives') {
       state.lives--;
       const hearts = '❤️'.repeat(Math.max(0, state.lives)) + '🤍'.repeat(3 - Math.max(0, state.lives));
       $('lives').textContent = hearts;
       
       if (state.lives <= 0) {
-        setTimeout(endGame, 900); // Завершаем игру с небольшой задержкой
+        setTimeout(endGame, 900);
         $('score').textContent = state.score;
         return;
       }
@@ -375,7 +342,6 @@ function updateComboBadge() {
 function endGame() {
   state.finished = true;
   clearInterval(state.timerId);
-
   $('finalScore').textContent = state.score;
 
   const best = Number(localStorage.getItem('bestScore') || 0);
@@ -445,31 +411,12 @@ applyTheme();
 initMenu();
 showScreen('menu');
 
-// Автоматическое обновление страницы при выходе новой версии
+// Автообновление при смене SW
 if ('serviceWorker' in navigator) {
   let refreshing = false;
-  
-  // Если контроль над страницей перешел к новому SW — перезагружаем страницу
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
-  });
-
-  // Проверяем обновления при загрузке страницы
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      reg.update(); // Принудительно ищем обновления при каждом запуске
-      
-      // Если нашли новый файл SW, сообщаем ему, чтобы он активировался
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            newWorker.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      });
-    }).catch(err => console.log('SW ошибка:', err));
   });
 }
