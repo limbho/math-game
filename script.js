@@ -331,14 +331,16 @@ function checkAnswer(value) {
 function updateComboBadge() {
   const badge = $('comboBadge');
   const mult = comboMultiplier();
+  
   if (state.combo >= 2) {
     badge.classList.remove('hidden');
-    badge.textContent = `🔥 ×${mult} (${state.combo} подряд)`;
+    badge.style.display = 'flex'; // Показываем
+    badge.querySelector('.stat-value').textContent = `×${mult} (${state.combo})`;
   } else {
     badge.classList.add('hidden');
+    badge.style.display = 'none'; // Полностью убираем из потока
   }
 }
-
 function endGame() {
   state.finished = true;
   clearInterval(state.timerId);
