@@ -1,129 +1,22 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Math Challenge</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#667eea">
-  
-  <!-- Apple / iOS -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MathGame">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  
-  <!-- Android / PWA -->
-  <meta name="mobile-web-app-capable" content="yes">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="icon-192.png">
-</head>
-<body>
-
-  <!-- ГЛАВНОЕ МЕНЮ -->
-  <div class="screen menu-screen" id="menuScreen">
-    <div class="menu-card">
-      <button id="themeToggle" class="theme-toggle-btn" title="Сменить тему">☀️</button>
-      <h1 class="logo">🧮 Math Challenge</h1>
-      <p class="subtitle">Решай примеры и физические формулы на скорость</p>
-
-      <div class="menu-section">
-        <label class="menu-label">Режим</label>
-        <div class="option-group" data-group="mode">
-          <button class="option active" data-value="arithmetic">Арифметика</button>
-          <button class="option" data-value="physics">Формулы</button>
-          <button class="option" data-value="mixed">Микс</button>
-        </div>
-      </div>
-
-      <div class="menu-section">
-        <label class="menu-label">Сложность</label>
-        <div class="option-group" data-group="difficulty">
-          <button class="option" data-value="easy">
-            <span class="opt-title">Легко</span>
-            <span class="opt-sub">простые числа</span>
-          </button>
-          <button class="option active" data-value="normal">
-            <span class="opt-title">Норма</span>
-            <span class="opt-sub">обычные</span>
-          </button>
-          <button class="option" data-value="hard">
-            <span class="opt-title">Сложно</span>
-            <span class="opt-sub">большие числа</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="menu-section">
-        <label class="menu-label">Тип игры</label>
-        <div class="option-group" data-group="playType">
-          <button class="option active" data-value="time">На время</button>
-          <button class="option" data-value="lives">Выживание</button>
-        </div>
-      </div>
-
-      <div class="best-score" id="menuBest">Рекорд: 0</div>
-      <button class="play-btn" id="playBtn">Играть</button>
-    </div>
-  </div>
-
-  <!-- ИГРА -->
-  <div class="screen game-screen hidden" id="gameScreen">
-    <div class="game">
       <div class="stats">
-        <span>Счёт: <b id="score">0</b></span>
-        <span class="combo hidden" id="comboBadge">🔥 ×1</span>
-        <span id="timerContainer">Время: <b id="timer">60</b>с</span>
-        <span id="livesContainer" class="hidden">Жизни: <b id="lives" style="color:var(--error); font-size:18px;">❤️❤️❤️</b></span>
+        <div class="stat-item">
+          <span class="stat-label">Счёт</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+
+        <div class="stat-item" id="timerContainer">
+          <span class="stat-label">Время</span>
+          <span class="stat-value" id="timer">60</span>
+        </div>
+
+        <div class="stat-item hidden" id="livesContainer">
+          <span class="stat-label">Жизни</span>
+          <span class="stat-value" id="lives" style="color:var(--error);">❤️❤️❤️</span>
+        </div>
+
+        <!-- Блок комбо вынесен отдельно и включается динамически -->
+        <div class="combo-container hidden" id="comboBadge">
+          <span class="stat-label">Комбо</span>
+          <span class="stat-value">×1</span>
+        </div>
       </div>
-
-      <!-- Прогресс-бар скрывается в режиме "Выживание" -->
-      <div class="progress-container" id="progressContainer">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-
-      <div id="questionContainer" class="question-container">
-        <div id="question" class="question">7 × 8 = ?</div>
-        <div id="pointsBadge" class="points-badge"></div>
-      </div>
-
-      <div id="answers" class="answers"></div>
-      <div id="feedback" class="feedback"></div>
-      <button class="quit-btn" id="quitBtn">← В меню</button>
-    </div>
-  </div>
-
-  <!-- ФИНАЛ -->
-  <div class="screen end-screen hidden" id="endScreen">
-    <div class="game-over">
-      <h1>Игра окончена!</h1>
-      <div class="final-score" id="finalScore">0</div>
-      <div id="endBest"></div>
-      <div class="end-actions">
-        <button class="play-btn" id="againBtn">Играть снова</button>
-        <button class="quit-btn" id="menuBtn">В меню</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Подключение библиотеки конфетти -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  
-  <!-- Основной скрипт игры -->
-  <script src="script.js"></script>
-  
-  <!-- Регистрация Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('SW зарегистрирован', reg))
-          .catch(err => console.error('SW ошибка', err));
-      });
-    }
-  </script>
-</body>
-</html>
