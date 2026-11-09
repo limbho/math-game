@@ -1,4 +1,4 @@
-const CACHE_NAME = 'math-game-network-first-v2'; // Поменяли версию кэша
+const CACHE_NAME = 'math-game-network-first-v6'; // Поменяли версию кэша
 const ASSETS = [
   './', './index.html', './style.css', './script.js', './manifest.json',
 ];
