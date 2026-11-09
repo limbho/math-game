@@ -1,10 +1,10 @@
-const CACHE_NAME = 'math-game-network-first-v4'; 
+const CACHE_NAME = 'math-game-network-first-v2'; // Поменяли версию кэша
 const ASSETS = [
   './', './index.html', './style.css', './script.js', './manifest.json',
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Сразу активируем новый SW
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -16,11 +16,16 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Стратегия Network First: пытаемся скачать из сети, если не выходит - берем из кэша
+  // Если запрос идет к внешнему сайту (например, на шрифты Google),
+  // пропускаем его напрямую в сеть, не трогая кэш.
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Для своих файлов используем Network First
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Если скачали успешно, обновляем кэш и отдаем пользователю
         const resClone = response.clone();
         caches.open(CACHE_NAME).then(cache => {
           cache.put(event.request, resClone);
