@@ -11,6 +11,7 @@ const DIFFICULTIES = {
 // МОДУЛЬНАЯ БАЗА ФОРМУЛ
 // ==============================
 const formulas = [
+  // Базовые формулы
   { left: 'F',    right: 'm·a',            vars: [{ key: 'm', label: 'm' }, { key: 'a', label: 'a' }, { key: 'F', label: 'F' }] },
   { left: 'v',    right: 's/t',            vars: [{ key: 'v', label: 'v' }, { key: 's', label: 's' }, { key: 't', label: 't' }] },
   { left: 's',    right: 'v·t',            vars: [{ key: 's', label: 's' }, { key: 'v', label: 'v' }, { key: 't', label: 't' }] },
@@ -21,6 +22,8 @@ const formulas = [
   { left: 'U',    right: 'I·R',            vars: [{ key: 'U', label: 'U' }, { key: 'I', label: 'I' }, { key: 'R', label: 'R' }] },
   { left: 'p',    right: 'F/S',            vars: [{ key: 'p', label: 'p' }, { key: 'F', label: 'F' }, { key: 'S', label: 'S' }] },
   { left: 'ρ',    right: 'm/V',            vars: [{ key: 'ρ', label: 'ρ' }, { key: 'm', label: 'm' }, { key: 'V', label: 'V' }] },
+  
+  // Сложные формулы
   { isHard: true, left: 'E',    right: 'm·c²',           vars: [{ key: 'm', label: 'm' }, { key: 'c', label: 'c' }, { key: 'E', label: 'E' }] },
   { isHard: true, left: 'P',    right: 'm·g',            vars: [{ key: 'm', label: 'm' }, { key: 'g', label: 'g' }, { key: 'P', label: 'P' }] },
   { isHard: true, left: 'Eк',   right: 'm·v²/2',         vars: [{ key: 'm', label: 'm' }, { key: 'v', label: 'v' }, { key: 'Eк', label: 'Eк' }] },
@@ -40,6 +43,9 @@ const formulas = [
   { isHard: true, left: 'T',    right: '1/ν',            vars: [{ key: 'T', label: 'T' }, { key: 'ν', label: 'ν' }] },
 ];
 
+// ==============================
+// НАСТРОЙКИ И СОСТОЯНИЕ
+// ==============================
 const settings = { mode: 'arithmetic', difficulty: 'normal', playType: 'time', theme: 'light' };
 const state = { 
   score: 0, time: 60, maxTime: 60, lives: 3, current: null, timerId: null, 
@@ -59,13 +65,18 @@ function applyTheme() {
   document.body.classList.toggle('theme-dark', dark);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1a1d2e' : '#667eea');
 }
+
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (settings.theme === 'system') applyTheme(); });
 
+// ==============================
+// ГЕНЕРАТОРЫ
+// ==============================
 function genArithmetic() {
   const cfg = DIFFICULTIES[settings.difficulty];
   const ops = ['+', '-', '×', '÷'];
   const op = ops[Math.floor(Math.random() * ops.length)];
   let a, b, answer;
+
   switch (op) {
     case '+': a = rand(...cfg.addRange); b = rand(...cfg.addRange); answer = a + b; break;
     case '-': a = rand(...cfg.addRange); b = rand(1, a); answer = a - b; break;
@@ -78,15 +89,20 @@ function genArithmetic() {
 function genFormula() {
   const cfg = DIFFICULTIES[settings.difficulty];
   let allPossibleQuestions = [];
+  
   const availableFormulas = formulas.filter(f => !f.isHard || cfg.hardFormulas);
+
   availableFormulas.forEach((f, fIndex) => {
     let hideCount = cfg.hideCount;
     if (hideCount >= f.vars.length) hideCount = f.vars.length - 1;
+    
     const shuffledVars = [...f.vars].sort(() => Math.random() - 0.5);
     const hiddenVars = shuffledVars.slice(0, hideCount);
     const targetVar = hiddenVars[0];
+
     let left = f.left;
     let right = f.right;
+
     hiddenVars.forEach(hv => {
       if (left === hv.key) left = '?';
       if (right === hv.key) right = '?';
@@ -94,12 +110,21 @@ function genFormula() {
       right = right.replace(regex, '?');
       left = left.replace(regex, '?');
     });
+
     let questionText = `${left} = ${right}`;
     if (hideCount > 1) {
       questionText += ` <br><span style="font-size:16px; color:var(--text-muted)">(Найди: ${targetVar.label})</span>`;
     }
+
     const key = `${fIndex}-${hiddenVars.map(v => v.key).join('-')}`;
-    allPossibleQuestions.push({ key, f, hidden: targetVar, text: questionText, answer: targetVar.label });
+    
+    allPossibleQuestions.push({
+      key,
+      f,
+      hidden: targetVar,
+      text: questionText,
+      answer: targetVar.label
+    });
   });
 
   let totalWeight = 0;
@@ -120,6 +145,7 @@ function genFormula() {
     const rnd = allLabels[Math.floor(Math.random() * allLabels.length)];
     if (rnd !== selected.answer && !wrongOpts.includes(rnd)) wrongOpts.push(rnd);
   }
+  
   return { text: selected.text, answer: selected.answer, options: [selected.answer, ...wrongOpts], type: 'formula' };
 }
 
@@ -129,6 +155,9 @@ function genQuestion() {
   return Math.random() < 0.5 ? genArithmetic() : genFormula();
 }
 
+// ==============================
+// ОЧКИ И КОМБО
+// ==============================
 function calculatePoints(q) {
   if (q.type === 'formula') return 15;
   const { a, b, op } = q;
@@ -370,16 +399,19 @@ function updateThemeButton(btn) {
   else btn.textContent = '🌗';
 }
 
+// Привязка событий
 $('playBtn').onclick = startGame;
 $('againBtn').onclick = startGame;
 $('menuBtn').onclick = () => { initMenu(); showScreen('menu'); };
 $('quitBtn').onclick = () => { clearInterval(state.timerId); state.finished = true; initMenu(); showScreen('menu'); };
 
+// Инициализация
 loadSettings();
 applyTheme();
 initMenu();
 showScreen('menu');
 
+// Автообновление при смене SW
 if ('serviceWorker' in navigator) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
