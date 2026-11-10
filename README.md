@@ -4,6 +4,9 @@ A lightweight Progressive Web App (PWA) designed to improve mental math skills a
 
 **🔗 [Play the game here](https://limbho.github.io/math-game/)**
 
+## 📲 Download for Android
+[⬇️ Download the latest APK](https://github.com/limbho/math-game/raw/main/builds/MathChallenge_v1.0.apk)
+
 ## ✨ Features
 
 - **Two Game Modes:** 
