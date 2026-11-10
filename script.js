@@ -113,7 +113,7 @@ function genFormula() {
 
     let questionText = `${left} = ${right}`;
     if (hideCount > 1) {
-      questionText += ` <br><span style="font-size:16px; color:var(--text-muted)">(Найди: ${targetVar.label})</span>`;
+            questionText += ' <br><span style="font-size:16px; color:var(--text-muted)">(Найди: ' + targetVar.label + ')</span>';
     }
 
     const key = `${fIndex}-${hiddenVars.map(v => v.key).join('-')}`;
