@@ -170,7 +170,9 @@ async function loadLeaderboard(mode) {
   list.innerHTML = '<p style="text-align: center; color: var(--text-faint);">Загрузка...</p>';
   
   try {
-    const q = db.collection('scores').where('mode', '==', mode).orderBy('score', 'desc').limit(10);
+    // Мы убрали orderBy, чтобы Firebase не требовал индекс.
+    // Мы просто берем все результаты для этого режима.
+    const q = db.collection('scores').where('mode', '==', mode);
     const snapshot = await q.get();
     
     list.innerHTML = '';
@@ -179,19 +181,29 @@ async function loadLeaderboard(mode) {
       return;
     }
     
-    let place = 1;
+    // Достаем данные и сортируем их вручную (по убыванию очков)
+    let scores = [];
     snapshot.forEach(doc => {
-      const data = doc.data();
+      scores.push(doc.data());
+    });
+    
+    scores.sort((a, b) => b.score - a.score);
+    
+    // Берем только топ-10
+    scores = scores.slice(0, 10);
+    
+    // Отрисовываем
+    scores.forEach((data, index) => {
       const row = document.createElement('div');
       row.className = 'lb-row';
       row.innerHTML = `
-        <span class="lb-place">${place}.</span>
+        <span class="lb-place">${index + 1}.</span>
         <span class="lb-name">${data.name}</span>
         <span class="lb-score">${data.score}</span>
       `;
       list.appendChild(row);
-      place++;
     });
+    
   } catch (err) {
     console.error(err);
     list.innerHTML = '<p style="text-align: center; color: var(--error);">Ошибка загрузки</p>';
