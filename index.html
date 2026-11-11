@@ -7,14 +7,54 @@
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#667eea">
-  
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MathGame">
-  <meta name="mobile-web-app-capable" content="yes">
-  
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" href="icon-192.png">
+  <style>
+    /* Стили для модальных окон */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 16px;
+    }
+    .modal-content {
+      background: var(--card-bg); padding: 24px; border-radius: 16px;
+      width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer;
+      color: var(--text-muted); background: none; border: none;
+    }
+    .modal-title { text-align: center; margin-top: 0; font-size: 20px; }
+    .input-group { margin-bottom: 12px; }
+    .input-group input {
+      width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border);
+      background: var(--answer-bg); color: var(--text); font-family: inherit; font-size: 16px;
+    }
+    .input-group input:focus { outline: none; border-color: var(--accent); }
+    .auth-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .auth-btns button {
+      flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .lb-row {
+      display: flex; justify-content: space-between; padding: 10px 0;
+      border-bottom: 1px solid var(--border); font-size: 15px;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-place { font-weight: bold; color: var(--accent); width: 25px; }
+    .lb-name { flex-grow: 1; margin-left: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-score { font-weight: bold; }
+    .user-badge {
+      position: absolute; top: 16px; left: 16px; font-size: 12px; cursor: pointer;
+      color: var(--text-muted); background: var(--answer-bg); border: 1px solid var(--border);
+      padding: 4px 8px; border-radius: 20px;
+    }
+  </style>
 </head>
 <body>
 
@@ -22,6 +62,8 @@
   <div class="screen menu-screen" id="menuScreen">
     <div class="menu-card">
       <button id="themeToggle" class="theme-toggle-btn" title="Сменить тему">☀️</button>
+      <button id="userAuthBtn" class="user-badge">Войти</button>
+
       <h1 class="logo">🧮 Math Challenge</h1>
       <p class="subtitle">Решай примеры и физические формулы на скорость</p>
 
@@ -37,18 +79,9 @@
       <div class="menu-section">
         <label class="menu-label">Сложность</label>
         <div class="option-group" data-group="difficulty">
-          <button class="option" data-value="easy">
-            <span class="opt-title">Легко</span>
-            <span class="opt-sub">простые числа</span>
-          </button>
-          <button class="option active" data-value="normal">
-            <span class="opt-title">Норма</span>
-            <span class="opt-sub">обычные</span>
-          </button>
-          <button class="option" data-value="hard">
-            <span class="opt-title">Сложно</span>
-            <span class="opt-sub">большие числа</span>
-          </button>
+          <button class="option" data-value="easy"><span class="opt-title">Легко</span></button>
+          <button class="option active" data-value="normal"><span class="opt-title">Норма</span></button>
+          <button class="option" data-value="hard"><span class="opt-title">Сложно</span></button>
         </div>
       </div>
 
@@ -60,49 +93,32 @@
         </div>
       </div>
 
-      <div class="best-score" id="menuBest">Рекорд: 0</div>
-      <button class="play-btn" id="playBtn">Играть</button>
+      <div class="best-score" id="menuBest">Личный рекорд: 0</div>
+      
+      <button class="play-btn" id="playBtn" style="margin-bottom: 10px;">Играть</button>
+      <button class="quit-btn" id="leaderboardBtn" style="width: 100%; margin: 0;">🏆 Таблица лидеров</button>
     </div>
   </div>
 
   <!-- ИГРА -->
   <div class="screen game-screen hidden" id="gameScreen">
     <div class="game">
-      <!-- Новая панель статистики -->
       <div class="stats">
-        <div class="stat-item">
-          <span class="stat-label">Счёт</span>
-          <span class="stat-value" id="score">0</span>
-        </div>
-
-        <div class="stat-item" id="timerContainer">
-          <span class="stat-label">Время</span>
-          <span class="stat-value" id="timer">60</span>
-        </div>
-
-        <div class="stat-item hidden" id="livesContainer">
-          <span class="stat-label">Жизни</span>
-          <span class="stat-value" id="lives" style="color:var(--error); font-size:16px;">❤️❤️❤️</span>
-        </div>
-
-        <div class="combo-container hidden" id="comboBadge">
-          <span class="stat-label">Комбо</span>
-          <span class="stat-value">×1</span>
-        </div>
+        <span>Счёт: <b id="score">0</b></span>
+        <span class="combo hidden" id="comboBadge">🔥 ×1</span>
+        <span id="timerContainer">Время: <b id="timer">60</b>с</span>
+        <span id="livesContainer" class="hidden">Жизни: <b id="lives" style="color:var(--error); font-size:18px;">❤️❤️❤️</b></span>
       </div>
-
       <div class="progress-container" id="progressContainer">
         <div class="progress-bar" id="progressBar"></div>
       </div>
-
       <div id="questionContainer" class="question-container">
         <div id="question" class="question">7 × 8 = ?</div>
         <div id="pointsBadge" class="points-badge"></div>
       </div>
-
       <div id="answers" class="answers"></div>
       <div id="feedback" class="feedback"></div>
-      <button class="quit-btn" id="quitBtn">← В меню</button>
+      <button class="quit-btn" id="pauseBtn" style="font-size: 15px;">⏸️ Пауза</button>
     </div>
   </div>
 
@@ -119,14 +135,54 @@
     </div>
   </div>
 
+  <!-- МОДАЛКА: АВТОРИЗАЦИЯ -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeAuthModal">×</button>
+      <h2 class="modal-title" id="authTitle">Вход</h2>
+      <div class="input-group">
+        <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
+      </div>
+      <div class="input-group">
+        <input type="password" id="authPassword" placeholder="Пароль (мин. 6 символов)" autocomplete="current-password">
+      </div>
+      <div id="authError" style="color: var(--error); font-size: 13px; text-align: center; margin-bottom: 10px;"></div>
+      <div class="auth-btns">
+        <button class="btn-primary" id="authSubmitBtn">Войти</button>
+        <button class="btn-secondary" id="authSwitchBtn">Регистрация</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА: ЛИДЕРБОРД -->
+  <div class="modal-overlay hidden" id="leaderboardModal">
+    <div class="modal-content">
+      <button class="modal-close" id="closeLeaderboardModal">×</button>
+      <h2 class="modal-title">🏆 Топ игроков</h2>
+      
+      <div class="option-group" data-group="lbMode" style="margin-bottom: 16px;">
+        <button class="option active" data-value="arithmetic">Арифметика</button>
+        <button class="option" data-value="physics">Формулы</button>
+        <button class="option" data-value="mixed">Микс</button>
+      </div>
+
+      <div id="leaderboardList" style="min-height: 200px;">
+        <p style="text-align: center; color: var(--text-faint);">Загрузка...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
   <script src="script.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('SW зарегистрирован', reg))
-          .catch(err => console.error('SW ошибка', err));
+        navigator.serviceWorker.register('./sw.js').then(reg => reg.update());
       });
     }
   </script>
